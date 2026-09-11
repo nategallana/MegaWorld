@@ -25,10 +25,10 @@ public class DbSQLite
         DatabaseName = databaseName;
         DatabasePath = Path.Combine(databasePath, databaseName);
 
-
-        //Kim - 09042026 
-        //MessageBox.Show(GetDatabasePath());
-
+        if (!string.IsNullOrEmpty(databasePath) && !Directory.Exists(databasePath))
+        {
+            Directory.CreateDirectory(databasePath);
+        }
 
         if (!File.Exists(DatabasePath))
         {

@@ -233,7 +233,8 @@ namespace Mega_World_Mall_Linking.Views
             dtp_StartDate.Value = DateTime.Parse(date);
             dtp_EndDate.Value = DateTime.Parse(date);
             dailyDataDetailsStorage = new DailyDataDetailsStorage();
-            dailySales = new DailyDataStorage();
+            dailyDataStorage = new DailyDataStorage();
+            dailySales = dailyDataStorage;
             hourlyDataStorage = new HourlyDataStorage();
             discountDataStorage = new DiscountDataStorage();
             SqlLiteTable.ORDERDATA = "orderdata";
@@ -524,13 +525,13 @@ namespace Mega_World_Mall_Linking.Views
             {
                 foreach (DataRow dr in dtHourly.Rows)
                 {
-                    if (!dailyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
-                    {
-                        tranCnt++;
-                        CusCnt++;
+                    tranCnt++;
+                    CusCnt++;
 
-                        string getDisc = $"SELECT * FROM DISCDATA WHERE OrderNo = '{dr["OrderNo"]}'";
-                        DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
+                    string getDisc = $"SELECT * FROM DISCDATA WHERE OrderNo = '{dr["OrderNo"]}'";
+                    DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
+                    if (dtDisc != null)
+                    {
                         foreach (DataRow drDisc in dtDisc.Rows)
                         {
                             if (drDisc["Type"].ToString().ToUpper() == "SC" || drDisc["Type"].ToString().ToUpper() == "SENIOR CITIZEN")
@@ -543,35 +544,51 @@ namespace Mega_World_Mall_Linking.Views
                                 DLY_TOT_OTHDISC += drDisc["Amount"].ToSafeDecimal();
                             }
                         }
+                    }
 
-                        string getVoided = $"SELECT * FROM VOIDDATA WHERE OrderID = '{dr["OrderNo"]}'";
-                        DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
+                    string getVoided = $"SELECT * FROM VOIDDATA WHERE OrderID = '{dr["OrderNo"]}'";
+                    DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
+                    if (dtVoid != null)
+                    {
                         foreach (DataRow dvr in dtVoid.Rows)
                         {
                             DLY_TOT_VOIDAMT += dr["Total"].ToSafeDecimal();
                         }
+                    }
 
-                        DLY_TOT_TAXAMT += dr["TaxTotal"].ToSafeDecimal();
-                        DLY_TOT_SRVC_CHRGE += dr["ServiceCharge"].ToSafeDecimal();
+                    DLY_TOT_TAXAMT += dr["TaxTotal"].ToSafeDecimal();
+                    DLY_TOT_SRVC_CHRGE += dr["ServiceCharge"].ToSafeDecimal();
 
-                        string getPayment1 = $"SELECT * FROM PAYMENTDATA WHERE OrderNo = '{dr["OrderNo"]}'";
-                        DataTable dtpay = _dbsqlite.GetDataTable(getPayment1);
+                    string getPayment1 = $"SELECT * FROM PAYMENTDATA WHERE OrderNo = '{dr["OrderNo"]}'";
+                    DataTable dtpay = _dbsqlite.GetDataTable(getPayment1);
+                    if (dtpay != null)
+                    {
                         foreach (DataRow dvp in dtpay.Rows)
                         {
-                            getPayment(dvp["Name"].ToString(), dr["OrderNo"].ToString());
+                            decimal payVal = dvp["Amount"].ToSafeDecimal();
+                            string payName = dvp["Name"]?.ToString() ?? "";
+                            if (payName.Trim().ToUpper() == "CASH")
+                            {
+                                DLY_TOT_CASHSLS += payVal;
+                            }
+                            else
+                            {
+                                DLY_TOT_OTHSLS += payVal;
+                            }
                         }
-
-                        DLY_TOT_CUSCNT = CusCnt;
-                        DLY_CTRLNO = 1;
-                        DLY_TOT_SLSTRAN = tranCnt;
-
-                        salesTypeList.Add(new DailyDataDetails
-                        {
-                            SLS_TYPE = SLS_TYPE,
-                            NET_SLS = dr["Total"].ToSafeDecimal()
-                        });
                     }
+
+                    DLY_TOT_CUSCNT = CusCnt;
+                    DLY_CTRLNO = 1;
+                    DLY_TOT_SLSTRAN = tranCnt;
+
+                    salesTypeList.Add(new DailyDataDetails
+                    {
+                        SLS_TYPE = SLS_TYPE,
+                        NET_SLS = dr["Total"].ToSafeDecimal()
+                    });
                 }
+            }
 
                 string GetStrTran = string.Format(Queries.SELECT_TABLE_WHERE_LIMIT_ASC, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
                 DataTable dtStart = _dbsqlite.GetDataTable(GetStrTran);
@@ -664,7 +681,6 @@ namespace Mega_World_Mall_Linking.Views
 
                 DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC, newEodCount);
             }
-        }
 
         private async Task btn_Send_ClickAsync(object sender, EventArgs e)
         {

@@ -320,15 +320,21 @@ namespace Mega_World_Mall_Linking.Views
             }
             if (!string.IsNullOrEmpty(txt_DBPath.Text))
             {
-                _dbParadox = new DbParadox(txt_DBPath.Text.Trim(), txt_dbPassword.Text.Trim());
+                try
+                {
+                    _dbParadox = new DbParadox(txt_DBPath.Text.Trim(), txt_dbPassword.Text.Trim());
+                }
+                catch { }
             }
-            else { }
 
-            if(!string.IsNullOrEmpty(txt_TempLoc.Text))
+            if (!string.IsNullOrEmpty(txt_TempLoc.Text))
             {
-                _dbSQLite = new DbSQLite(txt_TempLoc.Text.Trim(), txt_tempDB.Text.Trim());
+                try
+                {
+                    _dbSQLite = new DbSQLite(txt_TempLoc.Text.Trim(), txt_tempDB.Text.Trim());
+                }
+                catch { }
             }
-            { }
         }
 
         private void bunifuButton1_Click(object sender, EventArgs e)
