@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-16"?>
+<PaymentModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <paymentModels>
+    <PaymentModel>
+      <WboxPayment>CASH</WboxPayment>
+      <MallPayment>CASH</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>GC100</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>GCASH</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>WECHAT/ALIPAY/UNION PAY</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>GRABFOOD</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>FOOD PANDA</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>MAYA</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>CREDIT CARD</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>None</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>DONT CLICK</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>Wechat/Alipay/UP</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+  </paymentModels>
+</PaymentModelConfig>

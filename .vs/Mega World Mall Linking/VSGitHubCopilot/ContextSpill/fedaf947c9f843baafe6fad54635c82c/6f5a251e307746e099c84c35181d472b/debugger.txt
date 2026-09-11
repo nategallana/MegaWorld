@@ -1,0 +1,166 @@
+﻿## PROCESSES
+Currently debugging:
+- Mega World Mall Linking.exe (PID: 3892)
+
+## EXCEPTION
+Exception Type: System.Data.SQLite.SQLiteException
+Exception Message: SQL logic error
+no such column: TRAN_ID
+The callstack context, if included, corresponds to the thread where this exception occurred. There is no need to identify this thread by other means.
+The top most frame in the callstack context should correspond to the place the exception message was thrown from. Code may or may not have been provided for it but can be requested.
+
+## CALLSTACK
+Thread ID: 12156
+[1] [External Code]
+[14] Mega World Mall Linking.exe!Mega_World_Mall_Linking.LocalStorage.BaseStorage<Mega_World_Mall_Linking.Models.DiscountData>.GetDataTable
+Code for the stack frame:
+```csharp Mega World Mall Linking\LocalStorage\BaseStorage.cs
+292:         public DataTable GetDataTable(string sqlQuery)
+293:         {
+294:             return sqlite.Select(sqlQuery);
+295:         }
+```
+Current statement: line 294
+[15] Mega World Mall Linking.exe!Mega_World_Mall_Linking.LocalStorage.BaseStorage<Mega_World_Mall_Linking.Models.DiscountData>.IsExistValue
+Code for the stack frame:
+```csharp Mega World Mall Linking\LocalStorage\BaseStorage.cs
+235:         public bool IsExistValue(string columnName, string columnValue)
+236:         {
+237:             string sqlQuery = string.Format(Queries.SELECT_TABLE_WHERE, defaultTable, columnName + "= '" + columnValue + "'");
+238:             DataTable dt = GetDataTable(sqlQuery);
+239:             if (dt != null)
+240:             {
+241:                 return dt.Rows.Count > 0;
+242:             }
+243:             return false;
+244:         }
+```
+Current statement: line 238
+[16] Mega World Mall Linking.exe!Mega_World_Mall_Linking.Views.DateRange.DiscountSales
+This is the current user focused stack frame. The provided locals context corresponds to this stack frame, but you may evaluate expressions and retrieve code for any frame.
+Code for the stack frame:
+```csharp Mega World Mall Linking\Views\DateRange.cs
+477:         private void DiscountSales(DateTime dateNow)
+478:         {
+479:             InitializeDiscountData();
+480:             //dateNow = new DateTime(DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Year);
+481:             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day); // ? CORRECT
+482:             int Batch;
+483:             string transcation = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}'", dateNow.ToString("yyyyMMdd"))));
+484:             DataTable dtTransaction = _dbsqlite.GetDataTable(transcation);
+485: 
+486:             if (dtTransaction.Rows.Count > 0)
+487:             {
+488:                 foreach (DataRow dr in dtTransaction.Rows)
+489:                 {
+490:                     if (!discountDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
+491:                     {
+492:                         InitializeDiscountData();
+493:                         string getDiscount = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.DISCDATA, (string.Format("OrderNo = '{0}'", dr["OrderNo"].ToString())));
+494:                         DataTable discount = _dbsqlite.GetDataTable(getDiscount);
+495: 
+496:                         if (discount.Rows.Count > 0)
+497:                         {
+498:                             foreach (DataRow dsr in discount.Rows)
+499:                             {
+500: 
+501:                                 int PREV_CNTR = 0;
+502:                                 DiscountModel disc = _disc.Find(x => x.MallDiscount == dsr["Type"].ToString());
+503:                                 string d = disc.MallDiscount.ToString();
+504:                                 DiscountModel disDisc = _disc.Find(x => x.WboxDiscount == d.ToString());
+505:                                 DS_TRN_ID = dsr["OrderNo"].ToString();
+506:                                 DS_DISCCODE = d;
+507:                                 DS_DISCRIPT = disDisc.WboxDiscount.ToString();
+508:                                 DS_DISCAMT = DS_DISCAMT + dsr["Amount"].ToSafeDecimal();
+509: 
+510:                                 DataTable dtEOD = dailySales.GetLastEOD(TER_NO);
+511:                                 if (dtEOD.Rows.Count > 0)
+512:                                 {
+513:                                     foreach (DataRow rowEOD in dtEOD.Rows)
+514:                                     {
+515:                                         PREV_CNTR = rowEOD["EODCTR"].ToSafeInteger();
+516:                                     }
+517:                                 }
+518:                                 DS_BATCHNO = PREV_CNTR + 1;
+519:                                 discountEntries.Add(new DiscountDetailEntry
+520:                                 {
+521:                                     DiscountCode = DS_DISCCODE,
+522:                                     DiscountDescription = DS_DISCRIPT,
+523:                                     DiscountAmount = DS_DISCAMT
+524:                                 });
+525:                                 var DiscData = new DiscountData
+526:                                 {
+527:                                     ORDER_ID = DS_TRN_ID,
+528:                                     DISCOUNT_CODE = DS_DISCCODE,
+529:                                     DISCOUNT_DESC = DS_DISCRIPT,
+530:                                     DISCOUNT_AMT = DS_DISCAMT
+531:                                 };
+532: 
+533:                             }
+534: 
+535: 
+536:                         }
+537:                     }
+538:                 }
+539:             }
+540:             DiscountDetailFile data = new DiscountDetailFile
+541:             {
+542:                 TenantCode = TENT_CODE,
+543:                 POSTerminalNumber = Convert.ToInt32(TER_NO),
+544:                 BatchNumber = DS_BATCHNO,
+545:                 Entries = discountEntries
+546:             };
+547:             //DiscountDetailFile.GenerateFile(data, outputDirectory);
+548:             DiscountDetailFileGenerator.GenerateFile(data, SLS_LOC);
+549:         }
+```
+Current statement: line 490
+[17] Mega World Mall Linking.exe!Mega_World_Mall_Linking.Views.DateRange.btn_Send_ClickAsync.AnonymousMethod__1
+Code for the stack frame:
+```csharp Mega World Mall Linking\Views\DateRange.cs
+650:         private async Task btn_Send_ClickAsync(object sender, EventArgs e)
+651:         {
+652:             DateTime startDate = dtp_StartDate.Value.Date;
+653:             DateTime endDate = dtp_EndDate.Value.Date;
+654:             int totalDays = (endDate - startDate).Days + 1;
+655: 
+656:             Loading loadingForm = new Loading();
+657:             loadingForm.Show();
+658: 
+659:             var progress = new Progress<(int current, string date)>(p =>
+660:             {
+661:                 loadingForm.SetProgress(p.current, totalDays, $"Processing {p.date}...");
+662:             });
+663: 
+664:             await Task.Run(() =>
+665:             {
+666:                 int currentProgress = 0;
+667: 
+668:                 for (var date = startDate; date <= endDate; date = date.AddDays(1))
+669:                 {
+670:                     HourlySales(date);
+671:                     DiscountSales(date);
+672:                     DailySales(date);
+673: 
+674:                     currentProgress++;
+675: 
+676:                     ((IProgress<(int, string)>)progress).Report((currentProgress, date.ToString("yyyy-MM-dd")));
+677:                 }
+678:             });
+679: 
+680:             loadingForm.Close();
+681:             MessageBox.Show("All reports processed successfully.");
+682:         }
+```
+Current statement: line 671
+[18] [External Code]
+
+## LOCALS
+Variable: 'this' of type 'Mega_World_Mall_Linking.Views.DateRange' is a complex object with child properties and has value: {Mega_World_Mall_Linking.Views.DateRange}
+Variable: 'dateNow' of type 'System.DateTime' is a complex object with child properties and has value: {8/1/2026 12:00:00 AM}
+Variable: 'Batch' of type 'int' has value: 0
+Variable: 'transcation' of type 'string' has value: "SELECT * FROM orderdata WHERE AccDAte = '20260801'"
+Variable: 'dtTransaction' of type 'System.Data.DataTable' is a complex object with child properties and has value: {orderdata}
+Variable: 'data' of type 'Mega_World_Mall_Linking.Models.DiscountDetailFile' has value: null
+Variable: 'dr' of type 'System.Data.DataRow' is a complex object with child properties and has value: {System.Data.DataRow}
+

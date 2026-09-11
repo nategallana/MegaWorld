@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-16"?>
+<DiscountModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <discountModels>
+    <DiscountModel>
+      <WboxDiscount>Head Office</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>10%</WboxDiscount>
+      <MallDiscount>SC</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>GC</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Solo Parent</WboxDiscount>
+      <MallDiscount>SP</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>OTHERS</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Birthday promo</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+  </discountModels>
+</DiscountModelConfig>

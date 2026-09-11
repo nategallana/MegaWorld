@@ -1,0 +1,40 @@
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\x86\sqlite3.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\x64\sqlite3.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.exe.config
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.exe
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.pdb
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuButton.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuDataGridView.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuDatePicker.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuDropdown.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuGradientPanel.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuGroupBox.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuImageButton.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuLabel.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuPages.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuPictureBox.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuRadioButton.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Bunifu.UI.WinForms.BunifuTextbox.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\EntityFramework.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\EntityFramework.SqlServer.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\System.Data.SQLite.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\System.Data.SQLite.EF6.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\System.Data.SQLite.Linq.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Tarsier.Database.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\Tarsier.Extensions.dll
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\EntityFramework.xml
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\EntityFramework.SqlServer.xml
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\bin\Debug\System.Data.SQLite.xml
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.AssemblyReference.cache
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe.config
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Form1.resources
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Properties.Resources.resources
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.DateRange.resources
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.frmMain.resources
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.Settings.resources
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.GenerateResource.cache
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe.licenses
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.CoreCompileInputs.cache
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.CopyComplete
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe
+E:\HDrive\New folder\Program\Megaworld Mall Linking\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.pdb

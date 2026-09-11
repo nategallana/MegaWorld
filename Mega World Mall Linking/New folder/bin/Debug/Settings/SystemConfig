@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ConfigurationModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <configurationModels>
+    <ConfigurationModel>
+      <TenanCode>1465658451</TenanCode>
+      <DatabasePassword>5A*281</DatabasePassword>
+      <TerminalNumber>1465658451</TerminalNumber>
+      <SalesLocation>E:\testing\Megaworld Testing</SalesLocation>
+      <db_Location>C:\Restrnt\Data</db_Location>
+      <SalesType>01</SalesType>
+      <TempLocation>C:\Restrnt\Robinson</TempLocation>
+      <TempDB>RobinsonTemp.db</TempDB>
+    </ConfigurationModel>
+  </configurationModels>
+</ConfigurationModelConfig>

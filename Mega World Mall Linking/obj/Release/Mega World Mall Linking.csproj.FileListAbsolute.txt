@@ -1,0 +1,9 @@
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega World Mall Linking.csproj.AssemblyReference.cache
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Form1.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Properties.Resources.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Views.DateRange.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Views.frmMain.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Views.Loading.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega_World_Mall_Linking.Views.Settings.resources
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega World Mall Linking.csproj.GenerateResource.cache
+C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Release\Mega World Mall Linking.exe.licenses

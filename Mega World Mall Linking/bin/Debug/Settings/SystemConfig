@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ConfigurationModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <configurationModels>
+    <ConfigurationModel>
+      <TenanCode>1234</TenanCode>
+      <DatabasePassword>5A*281</DatabasePassword>
+      <TerminalNumber>01</TerminalNumber>
+      <SalesLocation>C:\Kim\MegaWorld Text File</SalesLocation>
+      <db_Location>C:\Restrnt\Data</db_Location>
+      <SalesType>01</SalesType>
+      <TempLocation>C:\Kim\API_READER</TempLocation>
+      <TempDB>API_DB.db</TempDB>
+    </ConfigurationModel>
+  </configurationModels>
+</ConfigurationModelConfig>

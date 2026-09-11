@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-16"?>
+<DiscountModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <discountModels>
+    <DiscountModel>
+      <WboxDiscount>20% Employee Disc</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Shopee DG 10%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>10% Off Slim. World Mem.</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>WeWork 10% Disc</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>OTHERS</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Food Panda Pro 20%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Food Panda Pro 25%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Food Panda Pro 30%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>TGI Priviledge 10%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>TGI VIP Card 20%</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+    <DiscountModel>
+      <WboxDiscount>Birthday promo</WboxDiscount>
+      <MallDiscount>OTHER</MallDiscount>
+    </DiscountModel>
+  </discountModels>
+</DiscountModelConfig>

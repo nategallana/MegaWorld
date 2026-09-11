@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-16"?>
+<PaymentModelConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <paymentModels>
+    <PaymentModel>
+      <WboxPayment>CASH</WboxPayment>
+      <MallPayment>CASH</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>SWIRL CARD</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>MASTER</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>Amex</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>JCB</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>Gift Certificate</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>BUY GC</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>Loyalty</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>None</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+    <PaymentModel>
+      <WboxPayment>OTHERS</WboxPayment>
+      <MallPayment>OTHER</MallPayment>
+    </PaymentModel>
+  </paymentModels>
+</PaymentModelConfig>
