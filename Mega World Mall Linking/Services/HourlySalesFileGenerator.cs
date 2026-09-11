@@ -1,4 +1,4 @@
-﻿using Mega_World_Mall_Linking.Helpers;
+using Mega_World_Mall_Linking.Helpers;
 using Mega_World_Mall_Linking.Models;
 using System;
 using System.Collections.Generic;
@@ -87,9 +87,10 @@ namespace Mega_World_Mall_Linking.Services
 
         private static string GenerateFileName(string tenantCode, int terminal, DateTime date)
         {
+            string safeTenantCode = (tenantCode ?? "").PadRight(4, '0').Substring(0, 4).ToUpper();
             string monthCode = date.Month <= 9 ? date.Month.ToString() : ((char)('A' + (date.Month - 10))).ToString();
             string dayCode = date.Day.ToString("D2");
-            return $"H{tenantCode.Substring(0, 4).ToUpper()}{terminal.ToString("D2")}1.{monthCode}{dayCode}";
+            return $"H{safeTenantCode}{terminal.ToString("D2")}1.{monthCode}{dayCode}";
         }
 
     }

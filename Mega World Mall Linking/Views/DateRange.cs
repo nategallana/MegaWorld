@@ -55,6 +55,8 @@ namespace Mega_World_Mall_Linking.Views
         public string DLY_TNTCODE;
         public string DLY_TERNO;
         public string DLY_DATE;
+        public string DLY_STR_TRAN;
+        public string DLY_END_TRAN;
         public decimal DLY_OLD_GRANTOT;
         public decimal DLY_NEW_GRANTOT;
         public decimal DLY_TOT_GROSS;
@@ -172,6 +174,9 @@ namespace Mega_World_Mall_Linking.Views
                     _dbsqlite = new DbSQLite(TEMP_DBLOC, TEMP_DBNAME);
                     _discountConfig = _settings.Read<DiscountModelConfig>("DiscountConfig");
                     _paymentConfig = _settings.Read<PaymentModelConfig>("PaymentConfig");
+                    _disc = _discountConfig?.discountModels ?? new List<DiscountModel>();
+                    _discount = _disc;
+                    _payment = _paymentConfig?.paymentModels ?? new List<PaymentModel>();
                 }
             }
             catch (Exception ex)
@@ -244,41 +249,25 @@ namespace Mega_World_Mall_Linking.Views
         }
         private void getPayment(string paymenttype, string ornum)
         {
-            string defualtName = "CASH";
-            _payment = _paymentConfig.paymentModels;
+            _payment = _paymentConfig?.paymentModels ?? new List<PaymentModel>();
 
             string query = string.Format("Select * from {0} where OrderNo = '{1}'", SqlLiteTable.PAYMENTDATA, ornum);
             DataTable dtpayment = _dbsqlite.GetDataTable(query);
 
-            if (dtpayment.Rows.Count > 0)
+            if (dtpayment != null && dtpayment.Rows.Count > 0)
             {
-                foreach (DataColumn string1column in dtpayment.Columns)
+                foreach (DataRow row in dtpayment.Rows)
                 {
-                    if (dtpayment.Rows[0][string1column].ToString() != "")
+                    decimal payment1Value = row["Amount"].ToSafeDecimal();
+                    string payName = row["Name"]?.ToString() ?? paymenttype;
+
+                    if (payName.Trim().ToUpper() == "CASH")
                     {
-                        string payment1 = GetPayment(ornum, false, 0);
-                        decimal payment1Value = Convert.ToDecimal(dtpayment.Rows[0][string1column]);
-                        payment1 = payment1 == "" ? paymenttype : payment1;
-
-                        if (payment1.ToUpper().ToString() == "CASH")
-                        {
-                            DLY_TOT_CASHSLS = DLY_TOT_CASHSLS + payment1Value;
-                        }
-                        else
-                        {
-                            DLY_TOT_OTHSLS = DLY_TOT_OTHSLS + payment1Value;
-                        }
-                        //switch (payment1.ToUpper().ToString())
-                        //{
-                        //    case "CASH":
-                        //        DLY_TOT_CASHSLS = DLY_TOT_CASHSLS + payment1Value;
-                        //        break;
-                        //    case "OTHERS":
-                        //        DLY_TOT_OTHSLS = DLY_TOT_OTHSLS + payment1Value;
-                        //        break;
-
-
-                        //}
+                        DLY_TOT_CASHSLS += payment1Value;
+                    }
+                    else
+                    {
+                        DLY_TOT_OTHSLS += payment1Value;
                     }
                 }
             }
@@ -287,7 +276,7 @@ namespace Mega_World_Mall_Linking.Views
         {
             string paymenttype = "CASH";
             string otherpaystring1 = "";
-            _payment = _paymentConfig.paymentModels;
+            _payment = _paymentConfig?.paymentModels ?? new List<PaymentModel>();
             if (multiPayment)
             {
                 string cmdtextMultiPay = string.Format(Queries.GET_PAYMENTNAME, count);
@@ -299,7 +288,6 @@ namespace Mega_World_Mall_Linking.Views
             }
             else
             {
-                //taena bahala na spaghetti code nalang muna to
                 string cmdtext = String.Format("Select String1 From {0} Where OrderNo = '{1}'", ParadoxTable.ORDERS, orNum);
                 DataTable dt = _dbParadox.GetDataTable(cmdtext);
                 if (dt != null && dt.Rows.Count > 0)
@@ -319,7 +307,7 @@ namespace Mega_World_Mall_Linking.Views
                             DataTable dtotherpay = _dbParadox.GetDataTable(cmdotherpay);
                             if (dtotherpay != null && dtotherpay.Rows.Count > 0)
                             {
-                                otherpaystring1 = dt.Rows[0]["String1"].ToString();
+                                otherpaystring1 = dtotherpay.Rows[0]["String1"].ToString();
                             }
 
                             string cmddefpay2 = String.Format("Select * From DEFPAY2 Where code = '{0}'", otherpaystring1);
@@ -339,146 +327,119 @@ namespace Mega_World_Mall_Linking.Views
         {
             tranCnt = 0;
             InitializeHourlyData();
-            //dateNow = new DateTime(DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Year);
-            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day); // ? CORRECT
+            hourlySalesEntries.Clear();
+            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
 
             string GetHourlyData = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}'", dateNow.ToString("yyyyMMdd"))));
             DataTable dtHourly = _dbsqlite.GetDataTable(GetHourlyData);
 
             if (dtHourly.Rows.Count > 0)
             {
-                foreach (DataRow dr in dtHourly.Rows)
+                int s = 0;
+                int e = 0;
+                string Start = string.Format(Queries.GET_STARTHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
+                DataTable sHR = _dbsqlite.GetDataTable(Start);
+                string end = string.Format(Queries.GET_ENDHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
+                DataTable eHR = _dbsqlite.GetDataTable(end);
+                if (sHR.Rows.Count > 0)
                 {
-                    if (!hourlyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
+                    foreach (DataRow drHR1 in sHR.Rows)
                     {
-                        InitializeHourlyData();
-                        tranCnt = tranCnt + 1;
-
-                        string date = dr["AccDate"].ToString();
-
-                        //KIM - 09052026
-                        DateTime busdate = DateTime.ParseExact(
-                            date,
-                            "yyyyMMdd",
-                            CultureInfo.InvariantCulture
-                        );
-
-                        //KIM - 09052026 - Removed
-                        //busdate = new DateTime(busdate.Month, busdate.Day, busdate.Year);
-
-                        int s = 0;
-                        int e = 0;
-                        string Start = string.Format(Queries.GET_STARTHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
-                        DataTable sHR = _dbsqlite.GetDataTable(Start);
-                        string end = string.Format(Queries.GET_ENDHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
-                        DataTable eHR = _dbsqlite.GetDataTable(end);
-                        if (sHR.Rows.Count > 0)
-                        {
-                            foreach (DataRow drHR1 in sHR.Rows)
-                            {
-                                s = Convert.ToDateTime(drHR1["Time"]).Hour;
-                            }
-                        }
-                        if (eHR.Rows.Count > 0)
-                        {
-                            foreach (DataRow drHR2 in eHR.Rows)
-                            {
-                                e = Convert.ToDateTime(drHR2["Time"]).Hour;
-                            }
-                        }
-
-
-
-                        HR_TNTCODE = TENT_CODE.ToString();
-                        HR_TERNO = TER_NO.ToString();
-                        HR_DATE = busdate.ToString("MMddyyyy");
-
-                        #region hourly Details
-                        //KIM - 09052026 Changed s++ to hr++
-                        for (int hr = s; hr <= e; hr++)
-                        {
-                            int hrTrnCnt = 0;
-                            int hrCucCnt = 0;
-                            decimal srvcCharge = 0;
-                            string str_HR = string.Format("{0:D2}:00:00", hr);
-                            string end_HR = string.Format("{0:D2}:59:59", hr);
-                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}' and Time Between '{1}' and '{2}'", dateNow.ToString("yyyyMMdd"), str_HR, end_HR)));
-                            DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
-
-                            if (dtHourlyDetails.Rows.Count > 0)
-                            {
-                                foreach (DataRow Hdr in dtHourlyDetails.Rows)
-                                {
-                                    HR_CODE = str_HR.ToString();
-                                    hrTrnCnt = hrTrnCnt + 1;
-                                    hrCucCnt = hrCucCnt + 1;
-                                    HR_NETSLS = HR_NETSLS + Hdr["Total"].ToSafeDecimal();
-                                    srvcCharge = srvcCharge + Hdr["ServiceCharge"].ToSafeDecimal();
-                                }
-                                DateTime hour = DateTime.ParseExact(
-                                    busdate.ToString("yyyyMMdd") + " " + HR_CODE,
-                                    "yyyyMMdd HH:mm:ss",
-                                    CultureInfo.InvariantCulture
-                                );
-                                HR_TOT_SLSCNT = HR_TOT_SLSCNT + hrTrnCnt;
-                                HR_TOT_CUSCNT = HR_TOT_CUSCNT + hrCucCnt;
-                                HR_TOT_NETSLS = HR_TOT_NETSLS + HR_NETSLS;
-                                hourlySalesEntries.Add(new HourlySalesEntry
-                                {
-                                    Timestamp = hour,
-                                    NetSalesAmount = HR_NETSLS,
-                                    TransactionCount = hrTrnCnt,
-                                    CustomerCount = hrCucCnt
-                                });
-                                #region saving to temp.db(HOURLY)
-                                var HourlySalesDetails = new HourlyDataDetails
-                                {
-                                    TRAN_ID = dr["OrderNo"].ToString(),
-                                    HOUR_CODE = hour.ToString(),
-                                    HNET_SLS = HR_NETSLS,
-                                    TRN_NO = hrTrnCnt,
-                                    CUS_NO = hrCucCnt
-                                };
-                                #endregion 
-                            }
-                        }
-                        #endregion
-
-                        #region creating text file for Hourly
-                        //DateTime today = 
-                        var salesFile = new HourlySalesFile
-                        {
-                            TenantCode = HR_TNTCODE,
-                            POSTerminalNumber = HR_TERNO.ToSafeInteger(),
-                            BusinessDate = HR_DATE,
-                            HourlyEntries = hourlySalesEntries,
-                            TotalNetSalesAmount = HR_TOT_NETSLS,
-                            TotalTransactionCount = HR_TOT_SLSCNT,
-                            TotalCustomerCount = HR_TOT_CUSCNT
-                        };
-
-                        var hourSales = new HourlyData
-                        {
-                            TENANTCODE = HR_TNTCODE,
-                            TER_NO = HR_TERNO,
-                            TRAN_ID = dr["OrderNo"].ToString(),
-                            BUS_DATE = HR_DATE,
-                            TOT_NET = HR_TOT_NETSLS,
-                            TOT_CUS = HR_TOT_CUSCNT,
-                            TOT_TRN = HR_TOT_SLSCNT
-                        };
-                        #endregion
-
-                        HourlySalesFileGenerator.GenerateFile(salesFile, SLS_LOC);
+                        s = Convert.ToDateTime(drHR1["Time"]).Hour;
                     }
                 }
+                if (eHR.Rows.Count > 0)
+                {
+                    foreach (DataRow drHR2 in eHR.Rows)
+                    {
+                        e = Convert.ToDateTime(drHR2["Time"]).Hour;
+                    }
+                }
+
+                HR_TNTCODE = TENT_CODE.ToString();
+                HR_TERNO = TER_NO.ToString();
+                HR_DATE = dateNow.ToString("MMddyyyy");
+
+                #region hourly Details
+                for (int hr = s; hr <= e; hr++)
+                {
+                    int hrTrnCnt = 0;
+                    int hrCucCnt = 0;
+                    decimal srvcCharge = 0;
+                    decimal hrNetSales = 0.00M;
+                    string str_HR = string.Format("{0:D2}:00:00", hr);
+                    string end_HR = string.Format("{0:D2}:59:59", hr);
+                    string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}' and Time Between '{1}' and '{2}'", dateNow.ToString("yyyyMMdd"), str_HR, end_HR)));
+                    DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
+
+                    if (dtHourlyDetails.Rows.Count > 0)
+                    {
+                        foreach (DataRow Hdr in dtHourlyDetails.Rows)
+                        {
+                            hrTrnCnt = hrTrnCnt + 1;
+                            hrCucCnt = hrCucCnt + 1;
+                            hrNetSales = hrNetSales + Hdr["Total"].ToSafeDecimal();
+                            srvcCharge = srvcCharge + Hdr["ServiceCharge"].ToSafeDecimal();
+                        }
+                        DateTime hour = dateNow.Date.AddHours(hr);
+                        HR_TOT_SLSCNT = HR_TOT_SLSCNT + hrTrnCnt;
+                        HR_TOT_CUSCNT = HR_TOT_CUSCNT + hrCucCnt;
+                        HR_TOT_NETSLS = HR_TOT_NETSLS + hrNetSales;
+                        hourlySalesEntries.Add(new HourlySalesEntry
+                        {
+                            Timestamp = hour,
+                            NetSalesAmount = hrNetSales,
+                            TransactionCount = hrTrnCnt,
+                            CustomerCount = hrCucCnt
+                        });
+                        #region saving to temp.db(HOURLY)
+                        var HourlySalesDetails = new HourlyDataDetails
+                        {
+                            TRAN_ID = dtHourly.Rows[0]["OrderNo"].ToString(),
+                            HOUR_CODE = hour.ToString(),
+                            HNET_SLS = hrNetSales,
+                            TRN_NO = hrTrnCnt,
+                            CUS_NO = hrCucCnt
+                        };
+                        #endregion 
+                    }
+                }
+                #endregion
+
+                #region creating text file for Hourly
+                var salesFile = new HourlySalesFile
+                {
+                    TenantCode = HR_TNTCODE,
+                    POSTerminalNumber = HR_TERNO.ToSafeInteger(),
+                    BusinessDate = HR_DATE,
+                    HourlyEntries = hourlySalesEntries,
+                    TotalNetSalesAmount = HR_TOT_NETSLS,
+                    TotalTransactionCount = HR_TOT_SLSCNT,
+                    TotalCustomerCount = HR_TOT_CUSCNT,
+                    DateNoFormat = dateNow
+                };
+
+                var hourSales = new HourlyData
+                {
+                    TENANTCODE = HR_TNTCODE,
+                    TER_NO = HR_TERNO,
+                    TRAN_ID = dtHourly.Rows[0]["OrderNo"].ToString(),
+                    BUS_DATE = HR_DATE,
+                    TOT_NET = HR_TOT_NETSLS,
+                    TOT_CUS = HR_TOT_CUSCNT,
+                    TOT_TRN = HR_TOT_SLSCNT
+                };
+                hourlyDataStorage.Add(hourSales, false);
+                #endregion
+
+                HourlySalesFileGenerator.GenerateFile(salesFile, SLS_LOC);
             }
         }
         private void DiscountSales(DateTime dateNow)
         {
             InitializeDiscountData();
-            //dateNow = new DateTime(DateTime.Now.Month, DateTime.Now.Day, DateTime.Now.Year);
-            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day); // ? CORRECT
+            discountEntries.Clear();
+            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
             int Batch;
             string transcation = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}'", dateNow.ToString("yyyyMMdd"))));
             DataTable dtTransaction = _dbsqlite.GetDataTable(transcation);
@@ -497,14 +458,14 @@ namespace Mega_World_Mall_Linking.Views
                         {
                             foreach (DataRow dsr in discount.Rows)
                             {
-
                                 int PREV_CNTR = 0;
-                                DiscountModel disc = _disc.Find(x => x.MallDiscount == dsr["Type"].ToString());
-                                string d = disc.MallDiscount.ToString();
-                                DiscountModel disDisc = _disc.Find(x => x.WboxDiscount == d.ToString());
+                                string rawType = dsr["Type"]?.ToString() ?? string.Empty;
+                                DiscountModel disc = _disc.Find(x => x.MallDiscount == rawType || x.WboxDiscount == rawType);
+                                string d = disc != null ? disc.MallDiscount : rawType;
+                                DiscountModel disDisc = _disc.Find(x => x.MallDiscount == d || x.WboxDiscount == d);
                                 DS_TRN_ID = dsr["OrderNo"].ToString();
                                 DS_DISCCODE = d;
-                                DS_DISCRIPT = disDisc.WboxDiscount.ToString();
+                                DS_DISCRIPT = disDisc != null ? disDisc.WboxDiscount : d;
                                 DS_DISCAMT = DS_DISCAMT + dsr["Amount"].ToSafeDecimal();
 
                                 DataTable dtEOD = dailySales.GetLastEOD(TER_NO);
@@ -512,7 +473,7 @@ namespace Mega_World_Mall_Linking.Views
                                 {
                                     foreach (DataRow rowEOD in dtEOD.Rows)
                                     {
-                                        PREV_CNTR = rowEOD["EODCTR"].ToSafeInteger();
+                                        PREV_CNTR = rowEOD["EOD_CNT"].ToSafeInteger();
                                     }
                                 }
                                 DS_BATCHNO = PREV_CNTR + 1;
@@ -530,10 +491,7 @@ namespace Mega_World_Mall_Linking.Views
                                     DISCOUNT_AMT = DS_DISCAMT
                                 };
                                 discountDataStorage.Add(DiscData, false);
-
                             }
-
-
                         }
                     }
                 }
@@ -543,6 +501,7 @@ namespace Mega_World_Mall_Linking.Views
                 TenantCode = TENT_CODE,
                 POSTerminalNumber = Convert.ToInt32(TER_NO),
                 BatchNumber = DS_BATCHNO,
+                BusinessDate = dateNow,
                 Entries = discountEntries
             };
             //DiscountDetailFile.GenerateFile(data, outputDirectory);
@@ -551,8 +510,10 @@ namespace Mega_World_Mall_Linking.Views
         public void DailySales(DateTime dateNow)
         {
             InitializeDailyData();
-            //dateNow = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
-            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day); // ? CORRECT
+            dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
+            DLY_TNTCODE = TENT_CODE;
+            DLY_TERNO = TER_NO;
+            DLY_DATE = dateNow.ToString("MMddyyyy");
 
             string GetHourlyData = $"SELECT * FROM ORDERDATA WHERE AccDate = '{dateNow:yyyyMMdd}'";
             DataTable dtHourly = _dbsqlite.GetDataTable(GetHourlyData);
@@ -565,13 +526,8 @@ namespace Mega_World_Mall_Linking.Views
                 {
                     if (!dailyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
                     {
-                        InitializeDailyData();
                         tranCnt++;
                         CusCnt++;
-
-                        DLY_TNTCODE = TENT_CODE;
-                        DLY_TERNO = TER_NO;
-                        DLY_DATE = dateNow.ToString("MMddyyyy");
 
                         string getDisc = $"SELECT * FROM DISCDATA WHERE OrderNo = '{dr["OrderNo"]}'";
                         DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
@@ -592,11 +548,11 @@ namespace Mega_World_Mall_Linking.Views
                         DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
                         foreach (DataRow dvr in dtVoid.Rows)
                         {
-                            DLY_TOT_VOIDAMT = dr["Total"].ToSafeDecimal();
+                            DLY_TOT_VOIDAMT += dr["Total"].ToSafeDecimal();
                         }
 
-                        DLY_TOT_TAXAMT = dr["TaxTotal"].ToSafeDecimal();
-                        DLY_TOT_SRVC_CHRGE = dr["ServiceCharge"].ToSafeDecimal();
+                        DLY_TOT_TAXAMT += dr["TaxTotal"].ToSafeDecimal();
+                        DLY_TOT_SRVC_CHRGE += dr["ServiceCharge"].ToSafeDecimal();
 
                         string getPayment1 = $"SELECT * FROM PAYMENTDATA WHERE OrderNo = '{dr["OrderNo"]}'";
                         DataTable dtpay = _dbsqlite.GetDataTable(getPayment1);
@@ -617,8 +573,42 @@ namespace Mega_World_Mall_Linking.Views
                     }
                 }
 
+                string GetStrTran = string.Format(Queries.SELECT_TABLE_WHERE_LIMIT_ASC, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
+                DataTable dtStart = _dbsqlite.GetDataTable(GetStrTran);
+                if (dtStart != null && dtStart.Rows.Count > 0)
+                {
+                    DLY_STR_TRAN = dtStart.Rows[0]["OrderNo"].ToString();
+                }
+                string GetEndTran = string.Format(Queries.SELECT_TABLE_WHERE_LIMIT_DESC, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
+                DataTable dtEnd = _dbsqlite.GetDataTable(GetEndTran);
+                if (dtEnd != null && dtEnd.Rows.Count > 0)
+                {
+                    DLY_END_TRAN = dtEnd.Rows[0]["OrderNo"].ToString();
+                }
+
                 DLY_TOT_NETSLS = DLY_TOT_CASHSLS + DLY_TOT_CHRGESLS + DLY_TOT_OTHSLS;
                 DLY_TOT_GROSS = DLY_TOT_NETSLS + DLY_TOT_SCDISC + DLY_TOT_OTHDISC;
+
+                string GetGT = $"SELECT * FROM dailysls WHERE BUS_DATE = '{dateNow.AddDays(-1):yyyy-MM-dd}'";
+                DataTable dtGT = dailyDataStorage.GetDataTable(GetGT);
+                if (dtGT != null && dtGT.Rows.Count > 0)
+                {
+                    DLY_OLD_GRANTOT = dtGT.Rows[0]["NEW_GRNTOT"].ToSafeDecimal();
+                }
+                else
+                {
+                    DLY_OLD_GRANTOT = 0.00M;
+                }
+                DLY_NEW_GRANTOT = DLY_TOT_NETSLS + DLY_OLD_GRANTOT;
+
+                int currentEodCount = 0;
+                DataTable dtPrevEOD = dailyDataStorage.GetLastEOD(TER_NO);
+                if (dtPrevEOD != null && dtPrevEOD.Rows.Count > 0)
+                {
+                    currentEodCount = dtPrevEOD.Rows[0]["EOD_CNT"].ToSafeInteger();
+                }
+                int newEodCount = currentEodCount + 1;
+                DLY_EODCNT = newEodCount;
 
                 var header = new DailyDataHeader
                 {
@@ -644,7 +634,35 @@ namespace Mega_World_Mall_Linking.Views
                     TotalNumberOfTransactions = DLY_TOT_SLSTRAN
                 };
 
-                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC);
+                var dly_sls = new Daily_SLS
+                {
+                    TENANT_CODE = DLY_TNTCODE,
+                    TER_NO = DLY_TERNO,
+                    BUS_DATE = dateNow.ToString("yyyy-MM-dd"),
+                    STR_TRN_ID = DLY_STR_TRAN,
+                    END_TRN_ID = DLY_END_TRAN,
+                    OLD_GRNTOT = DLY_OLD_GRANTOT,
+                    NEW_GRNTOT = DLY_NEW_GRANTOT,
+                    GROSS_SLS = DLY_TOT_GROSS,
+                    NON_TAXSLS = DLY_NON_TAXSLS,
+                    SC_DISC = DLY_TOT_SCDISC,
+                    OTHR_DISC = DLY_TOT_OTHDISC,
+                    REFUND = DLY_TOT_REF_AMT,
+                    VAT_AMT = DLY_TOT_TAXAMT,
+                    SRVC_CHRG = DLY_TOT_SRVC_CHRGE,
+                    NET_SLS = DLY_TOT_NETSLS,
+                    CASH_SLS = DLY_TOT_CASHSLS,
+                    CHRG_SLS = DLY_TOT_CHRGESLS,
+                    GC_OTHR_SLS = DLY_TOT_OTHSLS,
+                    VOID_AMT = DLY_TOT_VOIDAMT,
+                    CUS_CNT = DLY_TOT_CUSCNT,
+                    CTL_NO = DLY_CTRLNO,
+                    TRN_CNT = DLY_TOT_SLSTRAN,
+                    EOD_CNT = newEodCount
+                };
+                dailyDataStorage.Add(dly_sls, false);
+
+                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC, newEodCount);
             }
         }
 

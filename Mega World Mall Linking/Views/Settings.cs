@@ -1,4 +1,4 @@
-﻿using Mega_World_Mall_Linking.Constant;
+using Mega_World_Mall_Linking.Constant;
 using Mega_World_Mall_Linking.Helpers;
 using Mega_World_Mall_Linking.Models;
 using System;
@@ -32,12 +32,11 @@ namespace Mega_World_Mall_Linking.Views
         public Settings()
         {
             InitializeComponent();
+            _settings = new SettingWriter(Path.Combine(Application.StartupPath, "Settings"), false);
+            _settingsEOD = new SettingWriter(Path.Combine(Application.StartupPath, "Settings"), true);
             InitializeSystem();
             InitializePayment();
             InitializeDiscount();
-
-            _settings = new SettingWriter(Path.Combine(Application.StartupPath, "Settings"), false);
-            _settingsEOD = new SettingWriter(Path.Combine(Application.StartupPath, "Settings"), true);
         }
 
         private void InitializeDiscount()
@@ -276,7 +275,7 @@ namespace Mega_World_Mall_Linking.Views
                         txt_TenantCode.Text = configuration.TenanCode;
                         txt_DBPath.Text = configuration.db_Location;
                         txt_txtFilePath.Text = configuration.SalesLocation;
-                        txt_TerminalNo.Text = configuration.TenanCode;
+                        txt_TerminalNo.Text = configuration.TerminalNumber;
                         txt_dbPassword.Text = configuration.DatabasePassword;
                         txt_TempLoc.Text = configuration.TempLocation;
                         txt_tempDB.Text = configuration.TempDB;

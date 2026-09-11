@@ -1,4 +1,4 @@
-﻿using Mega_World_Mall_Linking.Constant;
+using Mega_World_Mall_Linking.Constant;
 using Mega_World_Mall_Linking.Helpers;
 using Mega_World_Mall_Linking.LocalStorage;
 using Mega_World_Mall_Linking.Models;
@@ -180,6 +180,9 @@ namespace Mega_World_Mall_Linking.Views
                     _dbsqlite = new DbSQLite(TEMP_DBLOC, TEMP_DBNAME);
                     _discountConfig = _settings.Read<DiscountModelConfig>("DiscountConfig");
                     _paymentConfig = _settings.Read<PaymentModelConfig>("PaymentConfig");
+                    _disc = _discountConfig?.discountModels ?? new List<DiscountModel>();
+                    _discount = _disc;
+                    _payment = _paymentConfig?.paymentModels ?? new List<PaymentModel>();
                 }
             }
             catch (Exception ex)
@@ -250,12 +253,14 @@ namespace Mega_World_Mall_Linking.Views
 
         private void generateEODToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            DailySales();
+            HourlySales();
+            DiscountSales();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            Application.Exit();
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -276,6 +281,7 @@ namespace Mega_World_Mall_Linking.Views
             tranCnt = 0;
             InitializeHourlyData();
             InitializedHourlyDetailData();
+            hourlySalesEntries.Clear();
             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
 
             string GetHourlyData = string.Format(Queries.SELECT_TABLE_Top1, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
@@ -285,14 +291,10 @@ namespace Mega_World_Mall_Linking.Views
             {
                 foreach (DataRow dr in dtHourly.Rows)
                 {
-                    if (!hourlyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()));
+                    if (!hourlyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
                     {
-                        //InitializeHourlyData();
                         tranCnt = tranCnt + 1;
 
-                        DateTime date = dr["AccDate"].ToSafeDateTime();
-                        //string dateFormat = date.ToString("")
-                        //DateTime busdate = Convert.ToDateTime(date);
                         DateTime busdate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
                         int s = 0;
                         int e = 0;
@@ -318,20 +320,20 @@ namespace Mega_World_Mall_Linking.Views
                                 e = int.Parse(ehr1);
                             }
                         }
-                        //string str_HR = string.Format("{0}:00:00", hr)
 
                         HR_TNTCODE = TENT_CODE.ToString();
                         HR_TERNO = TER_NO.ToString();
                         HR_DATE = busdate.ToString("MMddyyyy");
                         #region hourly Details
-                        for (int hr = s; s <= e; s++)
+                        for (int hr = s; hr <= e; hr++)
                         {
                             int hrTrnCnt = 0;
                             int hrCucCnt = 0;
                             decimal srvcCharge = 0;
-                            string str_HR = string.Format("{0}:00:00", s);
-                            string end_HR = string.Format("{0}:59:59", s);
-                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = {0} and Time_Now Between '{1}' and '{2}'", dateNow.ToString("yyyyMMdd"), str_HR, end_HR)));
+                            HR_NETSLS = 0.00M;
+                            string str_HR = string.Format("{0:D2}:00:00", hr);
+                            string end_HR = string.Format("{0:D2}:59:59", hr);
+                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}' and Time_Now Between '{1}' and '{2}'", dateNow.ToString("yyyyMMdd"), str_HR, end_HR)));
                             DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
 
                             if (dtHourlyDetails.Rows.Count > 0)
@@ -340,13 +342,12 @@ namespace Mega_World_Mall_Linking.Views
                                 HR_CODE = str_HR.ToString();
                                 foreach (DataRow Hdr in dtHourlyDetails.Rows)
                                 { 
-                                    //HR_CODE = Hdr
                                     hrTrnCnt = hrTrnCnt + 1;
                                     hrCucCnt = hrCucCnt + 1;
                                     HR_NETSLS = HR_NETSLS + Hdr["Total"].ToSafeDecimal();
                                     srvcCharge = srvcCharge + Hdr["ServiceCharge"].ToSafeDecimal();
                                 }
-                                DateTime hour = Convert.ToDateTime(HR_CODE);
+                                DateTime hour = busdate.Date.AddHours(hr);
                                 HR_TOT_SLSCNT = HR_TOT_SLSCNT + hrTrnCnt;
                                 HR_TOT_CUSCNT = HR_TOT_CUSCNT + hrCucCnt;
                                 HR_TOT_NETSLS = HR_TOT_NETSLS + HR_NETSLS;
@@ -374,7 +375,6 @@ namespace Mega_World_Mall_Linking.Views
                         #endregion
 
                         #region creating text file for Hourly
-                        //DateTime today = 
                         var salesFile = new HourlySalesFile
                         {
                             TenantCode = HR_TNTCODE,
@@ -408,6 +408,7 @@ namespace Mega_World_Mall_Linking.Views
         private void DiscountSales()
         {
             InitializeDiscountData();
+            discountEntries.Clear();
             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
             int Batch;
             string transcation = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}'", dateNow.ToString("yyyyMMdd"))));
@@ -427,17 +428,13 @@ namespace Mega_World_Mall_Linking.Views
                         {
                             foreach (DataRow dsr in discount.Rows)
                             {
-                                //DiscountModel disc = _disc.Find(x => x.MallDiscount == dsr["Type"].ToString());
-                                //string d = disc.MallDiscount.ToString();
-                                //DiscountModel disDisc = _disc.Find(x => x.WboxDiscount == d.ToString());
                                 DS_TRN_ID = dsr["OrderNo"].ToString();
                                 string discountName = GetSalesDiscount(DS_TRN_ID, discount);
                                 DS_DISCCODE = discountName;
-                                DiscountModel disDisc = _disc.Find(x => x.WboxDiscount.Trim().Equals(discountName.Trim(), StringComparison.OrdinalIgnoreCase));
-                                DS_DISCRIPT = disDisc.ToSafeString();
+                                DiscountModel disDisc = _disc.Find(x => x.WboxDiscount != null && x.WboxDiscount.Trim().Equals(discountName.Trim(), StringComparison.OrdinalIgnoreCase));
+                                DS_DISCRIPT = disDisc != null ? disDisc.MallDiscount : discountName;
                                 DS_DISCAMT = DS_DISCAMT + dsr["Amount"].ToSafeDecimal();
 
-                               
                                 discountEntries.Add(new DiscountDetailEntry
                                 {
                                     DiscountCode = DS_DISCCODE,
@@ -471,6 +468,7 @@ namespace Mega_World_Mall_Linking.Views
                 TenantCode = TENT_CODE,
                 POSTerminalNumber = Convert.ToInt32(TER_NO),
                 BatchNumber = DS_BATCHNO,
+                BusinessDate = dateNow,
                 Entries = discountEntries
             };
             //DiscountDetailFile.GenerateFile(data, outputDirectory);
@@ -506,13 +504,11 @@ namespace Mega_World_Mall_Linking.Views
                             if (drDisc["Type"].ToString().ToUpper() == "SCD" || drDisc["Type"].ToString().ToUpper() == "SENIOR CITIZEN")
                             {
                                 DLY_TOT_SCDISC = DLY_TOT_SCDISC + drDisc["Amount"].ToSafeDecimal();
-                                DLY_TOT_SCDISC = DLY_TOT_SCDISC * (-1);
                                 DLY_NON_TAXSLS = DLY_NON_TAXSLS + dr["Total"].ToSafeDecimal();
                             }
                             else
                             {
                                 DLY_TOT_OTHDISC = DLY_TOT_OTHDISC + drDisc["Amount"].ToSafeDecimal();
-                                DLY_TOT_OTHDISC = DLY_TOT_OTHDISC * (-1);
                             }
                         }
 
@@ -595,6 +591,15 @@ namespace Mega_World_Mall_Linking.Views
                 }
                 DLY_NEW_GRANTOT = DLY_TOT_NETSLS + DLY_OLD_GRANTOT;
 
+                int currentEodCount = 0;
+                DataTable dtPrevEOD = dailyDataStorage.GetLastEOD(TER_NO);
+                if (dtPrevEOD != null && dtPrevEOD.Rows.Count > 0)
+                {
+                    currentEodCount = dtPrevEOD.Rows[0]["EOD_CNT"].ToSafeInteger();
+                }
+                int newEodCount = currentEodCount + 1;
+                DLY_EODCNT = newEodCount;
+
                 var header = new DailyDataHeader
                 {
                     TenantCode = DLY_TNTCODE,
@@ -643,9 +648,10 @@ namespace Mega_World_Mall_Linking.Views
                     CUS_CNT = DLY_TOT_CUSCNT,
                     CTL_NO = DLY_CTRLNO,
                     TRN_CNT = DLY_TOT_SLSTRAN,
+                    EOD_CNT = newEodCount
                 };
                 dailyDataStorage.Add(dly_sls, false);
-                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC);
+                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC, newEodCount);
             }
         }
         private string GetSalesDiscount(string OrderNumber, DataTable dtDiscount)
@@ -678,41 +684,25 @@ namespace Mega_World_Mall_Linking.Views
         }
         private void getPayment(string paymenttype, string ornum)
         {
-            string defualtName = "CASH";
-            _payment = _paymentConfig.paymentModels;
+            _payment = _paymentConfig?.paymentModels ?? new List<PaymentModel>();
 
             string query = string.Format("Select * from {0} where OrderNo = '{1}'", SqlLiteTable.PAYMENTDATA, ornum);
             DataTable dtpayment = _dbsqlite.GetDataTable(query);
 
-            if (dtpayment.Rows.Count > 0)
+            if (dtpayment != null && dtpayment.Rows.Count > 0)
             {
-                foreach (DataColumn string1column in dtpayment.Columns)
+                foreach (DataRow row in dtpayment.Rows)
                 {
-                    if (dtpayment.Rows[0][string1column].ToString() != "")
+                    decimal payment1Value = row["Amount"].ToSafeDecimal();
+                    string payName = row["Name"]?.ToString() ?? paymenttype;
+
+                    if (payName.Trim().ToUpper() == "CASH")
                     {
-                        string payment1 = GetPayment(ornum, false, 0);
-                        decimal payment1Value = Convert.ToDecimal(dtpayment.Rows[0][string1column]);
-                        payment1 = payment1 == "" ? paymenttype : payment1;
-
-                        if (payment1.ToUpper().ToString() == "CASH")
-                        {
-                            DLY_TOT_CASHSLS = DLY_TOT_CASHSLS + payment1Value;
-                        }
-                        else
-                        {
-                            DLY_TOT_OTHSLS = DLY_TOT_OTHSLS + payment1Value;
-                        }
-                        //switch (payment1.ToUpper().ToString())
-                        //{
-                        //    case "CASH":
-                        //        DLY_TOT_CASHSLS = DLY_TOT_CASHSLS + payment1Value;
-                        //        break;
-                        //    case "OTHERS":
-                        //        DLY_TOT_OTHSLS = DLY_TOT_OTHSLS + payment1Value;
-                        //        break;
-
-
-                        //}
+                        DLY_TOT_CASHSLS += payment1Value;
+                    }
+                    else
+                    {
+                        DLY_TOT_OTHSLS += payment1Value;
                     }
                 }
             }

@@ -24,12 +24,14 @@ namespace Mega_World_Mall_Linking.Constant
         public const string GET_ENDHOUR = "SELECT Time FROM {0} WHERE AccDate = '{1}' ORDER BY Time_Now DESC LIMIT 1";
         //public const string GET_ENDHOUR = "SELECT TOP1 STRFTIME('%H', Time) as EndHour from {0} where AccDate ='{1}' ORDER BY AccDate DESC";
 
+        public const string SELECT_TABLE_WHERE_DESC_LIMIT1 = "SELECT * FROM {0} WHERE {1} ORDER BY {2} DESC LIMIT 1";
+
         //wbox paradox queries
         //public const string OrderList = @"Select *
         //                              From {0} Where AcDate = #{1:MM/dd/yyyy}#";
 
         public const string OrderList = @"Select *
-                                      From {0} Where TableNo NOTdi IN ('CASH IN', 'CASH OUT') AND AcDate = #{1:MM/dd/yyyy}#";
+                                      From {0} Where TableNo NOT IN ('CASH IN', 'CASH OUT') AND AcDate = #{1:MM/dd/yyyy}#";
 
         public const string GET_PAYMENTAPPLIED = @"Select CAmount,VAmount,AAmount,MAmount,QAmount,IAmount,DAmount,UAmount,YAmount,OAmount From {0} Where {0}.OrderNo = '{1}'";
         public const string GET_PAYMENTNAME = @"Select Name2 From Defpay Where Remark = '{0}'";

@@ -206,3 +206,73 @@ C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall
 C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega Wor.7B65D17F.Up2Date
 C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe
 C:\Kim\Mega World Mall Linking\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.pdb
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\x86\sqlite3.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\x64\sqlite3.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.exe.config
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.exe
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Mega World Mall Linking.pdb
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\EntityFramework.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\EntityFramework.SqlServer.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Configuration.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Diagnostics.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.FileProviders.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Hosting.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Logging.Abstractions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Options.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Primitives.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\OpenAI.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Buffers.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.ClientModel.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Data.SQLite.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Data.SQLite.EF6.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Data.SQLite.Linq.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Diagnostics.DiagnosticSource.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.IO.Pipelines.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Memory.Data.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Memory.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Net.ServerSentEvents.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Numerics.Vectors.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Text.Encodings.Web.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Text.Json.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Threading.Tasks.Extensions.dll
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\EntityFramework.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\EntityFramework.SqlServer.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Configuration.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.DependencyInjection.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Diagnostics.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.FileProviders.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Hosting.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Logging.Abstractions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Options.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\Microsoft.Extensions.Primitives.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\OpenAI.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Buffers.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.ClientModel.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Data.SQLite.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Diagnostics.DiagnosticSource.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.IO.Pipelines.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Memory.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Memory.Data.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Net.ServerSentEvents.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Numerics.Vectors.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Text.Encodings.Web.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Text.Json.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\System.Threading.Tasks.Extensions.xml
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.AssemblyReference.cache
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Form1.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Properties.Resources.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.DateRange.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.frmMain.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.Loading.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega_World_Mall_Linking.Views.Settings.resources
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.GenerateResource.cache
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe.licenses
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.csproj.CoreCompileInputs.cache
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega Wor.7B65D17F.Up2Date
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.exe
+c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\obj\Debug\Mega World Mall Linking.pdb

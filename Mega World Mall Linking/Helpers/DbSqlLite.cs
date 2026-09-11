@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
@@ -34,6 +34,7 @@ public class DbSQLite
         {
             SQLiteConnection.CreateFile(DatabasePath);
         }
+        EnsureTablesExist();
     }
 
 
@@ -200,9 +201,54 @@ public class DbSQLite
 
     public bool IsValueExist(string tableName, string column, string value)
     {
-        var sql = $"SELECT 1 FROM {tableName} WHERE {column} = {value} LIMIT 1;";
+        string safeVal = (value ?? string.Empty).Replace("'", "''");
+        var sql = $"SELECT 1 FROM {tableName} WHERE {column} = '{safeVal}' LIMIT 1;";
         var dt = GetDataTable(sql);
         return dt.Rows.Count > 0;
+    }
+
+    public void EnsureTablesExist()
+    {
+        ExecuteNonQuery(@"
+            CREATE TABLE IF NOT EXISTS orderdata (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                OrderNo TEXT,
+                AccDate TEXT,
+                Time TEXT,
+                Time_Now TEXT,
+                TableNo TEXT,
+                Total DECIMAL(18,2) DEFAULT 0,
+                TaxTotal DECIMAL(18,2) DEFAULT 0,
+                ServiceCharge DECIMAL(18,2) DEFAULT 0,
+                Posted INTEGER DEFAULT 0,
+                Void INTEGER DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS discountdata (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                OrderNo TEXT,
+                Type TEXT,
+                Amount DECIMAL(18,2) DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS voiddata (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                OrderID TEXT,
+                Total DECIMAL(18,2) DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS paymentdata (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                OrderNo TEXT,
+                Name TEXT,
+                Amount DECIMAL(18,2) DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS itemdata (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                OrderNo TEXT,
+                ItemCode TEXT,
+                ItemName TEXT,
+                Qty DECIMAL(18,2) DEFAULT 0,
+                Amount DECIMAL(18,2) DEFAULT 0
+            );
+        ");
     }
 
     public bool IsEmpty(string tableName)

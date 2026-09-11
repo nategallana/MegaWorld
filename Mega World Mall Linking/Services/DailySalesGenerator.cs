@@ -1,4 +1,4 @@
-﻿using Mega_World_Mall_Linking.Models;
+using Mega_World_Mall_Linking.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
@@ -36,7 +36,7 @@ namespace Mega_World_Mall_Linking.Services
             lines.Add("10" + FormatAmount(salesReport.TotalRefundAmount));
             lines.Add("11" + FormatAmount(salesReport.TotalTaxAmount));
             lines.Add("12" + FormatAmount(salesReport.TotalServiceCharge));
-            lines.Add("13" + FormatAmount(salesReport.TotalServiceCharge));
+            lines.Add("13" + FormatAmount(salesReport.TotalNetSalesAmount));
             lines.Add("14" + FormatAmount(salesReport.TotalCashSales));
             lines.Add("15" + FormatAmount(salesReport.TotalChargeSales)) ;
             lines.Add("16" + FormatAmount(salesReport.TotalGCOtherSales));
@@ -72,7 +72,7 @@ namespace Mega_World_Mall_Linking.Services
 
         private static string GenerateFileName(string tenantID, int terminalNo, int batchNo, DateTime date)
         {
-            string tenantCode = tenantID.Substring(0, 4).ToUpper();
+            string tenantCode = (tenantID ?? "").PadRight(4, '0').Substring(0, 4).ToUpper();
             string terminal = terminalNo.ToString("D2");
             string batch = batchNo.ToString();
 

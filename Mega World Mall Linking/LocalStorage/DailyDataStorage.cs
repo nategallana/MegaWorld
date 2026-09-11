@@ -1,4 +1,4 @@
-﻿using Mega_World_Mall_Linking.Constant;
+using Mega_World_Mall_Linking.Constant;
 using Mega_World_Mall_Linking.Models;
 using System;
 using System.Collections.Generic;
@@ -24,25 +24,26 @@ namespace Mega_World_Mall_Linking.LocalStorage
         //}
         public DataTable GetLastEOD(string Terminal)
         {
-            // string query = string.Format(Queries.SELECT_TABLE_DESC_LIMIT1, _tableName, "TRN_DATE");
-            string query = string.Format(Queries.SELECT_TABLE_DESC_LIMIT1, _tableName, "ID", string.Format("(TER_NO = '{0}')", Terminal));
-            // string query = string.Format(Queries.SELECT_TABLE_DESC_LIMIT1, _tableName, "ID",string.Format("(TER_NO = '{0}')",Terminal));
+            string where = string.IsNullOrEmpty(Terminal) ? "1=1" : string.Format("TER_NO = '{0}'", Terminal);
+            string query = string.Format(Queries.SELECT_TABLE_WHERE_DESC_LIMIT1, _tableName, where, "ID");
             return GetDataTable(query);
         }
         public DataTable LastEOD()
         {
-            //string query = string.Format(Queries.SELECT_TABLE_DESC_LIMIT1, _tableName, "ID");
             string query = string.Format("Select * from {0} Order by {1} desc limit 1", _tableName, "ID");
             return GetDataTable(query);
         }
         public DataTable GetInvoiceTransactions(DateTime processDate, string Terminal)
         {
-            string query = string.Format(Queries.SELECT_TABLE_WHERE, _tableName, string.Format("(TRN_DATE) = date('{0}')", processDate.ToString("yyyy-dd-MM")), string.Format("(TER_NO) = '{0}'", Terminal));
+            string where = string.IsNullOrEmpty(Terminal)
+                ? string.Format("BUS_DATE = '{0}'", processDate.ToString("yyyy-MM-dd"))
+                : string.Format("BUS_DATE = '{0}' AND TER_NO = '{1}'", processDate.ToString("yyyy-MM-dd"), Terminal);
+            string query = string.Format(Queries.SELECT_TABLE_WHERE, _tableName, where);
             return GetDataTable(query);
         }
         public DataTable GetInvoiceTransactionsPrint(DateTime processDate)
         {
-            string query = string.Format(Queries.SELECT_TABLE_WHERE, _tableName, string.Format("(TRN_DATE) = date('{0}')", processDate.ToString("yyyy-dd-MM")));
+            string query = string.Format(Queries.SELECT_TABLE_WHERE, _tableName, string.Format("BUS_DATE = '{0}'", processDate.ToString("yyyy-MM-dd")));
             return GetDataTable(query);
         }
 
