@@ -104,6 +104,8 @@ namespace Mega_World_Mall_Linking.Views
         #endregion
         private void InitializeDailyData()
         {
+            tranCnt = 0;
+            CusCnt = 0;
             DLY_TNTCODE = TENT_CODE;
             DLY_TERNO = TER_NO;
             DLY_DATE = DateTime.Now.ToString("yyyy-MM-dd");
@@ -491,8 +493,47 @@ namespace Mega_World_Mall_Linking.Views
                                 (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
                                 (!string.IsNullOrEmpty(x.MallDiscount) && x.MallDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)));
 
-                            string discCode = disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount) ? disc.MallDiscount.Trim() : rawType;
-                            string discDesc = disc != null && !string.IsNullOrWhiteSpace(disc.WboxDiscount) ? disc.WboxDiscount.Trim() : rawType;
+                            string discCode;
+                            string discDesc;
+                            if (disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount))
+                            {
+                                discCode = disc.MallDiscount.Trim();
+                                discDesc = !string.IsNullOrWhiteSpace(disc.WboxDiscount) ? disc.WboxDiscount.Trim() : rawType;
+                            }
+                            else
+                            {
+                                string upper = rawType.ToUpper();
+                                if (upper == "SENIOR" || upper == "SENIOR CITIZEN" || upper == "SC" || upper == "SCD")
+                                {
+                                    discCode = "SC";
+                                    discDesc = "SENIOR CITIZEN";
+                                }
+                                else if (upper == "PWD" || upper.Contains("DISABILITY"))
+                                {
+                                    discCode = "PWD";
+                                    discDesc = "PERSON WITH DISABILITY";
+                                }
+                                else if (upper == "NAAC" || upper.Contains("ATHLETE"))
+                                {
+                                    discCode = "NAAC";
+                                    discDesc = "NATL ATHLETES & COACHES";
+                                }
+                                else if (upper == "SOLO PARENT" || upper == "SOLOPARENT" || upper == "SP")
+                                {
+                                    discCode = "SP";
+                                    discDesc = "SOLO PARENT";
+                                }
+                                else if (upper == "MEDAL OF VALOR" || upper == "MOV")
+                                {
+                                    discCode = "MOV";
+                                    discDesc = "MEDAL OF VALOR";
+                                }
+                                else
+                                {
+                                    discCode = rawType.Length > 6 ? rawType.Substring(0, 6) : rawType;
+                                    discDesc = rawType;
+                                }
+                            }
 
                             if (!discountDataStorage.IsExistValue("ORDER_ID", orderNo))
                             {
@@ -549,6 +590,7 @@ namespace Mega_World_Mall_Linking.Views
             DataTable dtHourly = _dbsqlite.GetDataTable(GetHourlyData);
 
             List<DailyDataDetails> salesTypeList = new List<DailyDataDetails>();
+            var salesTypeTotals = new Dictionary<string, decimal>();
 
             if (dtHourly.Rows.Count > 0)
             {
@@ -563,15 +605,50 @@ namespace Mega_World_Mall_Linking.Views
                     {
                         foreach (DataRow drDisc in dtDisc.Rows)
                         {
-                            string discType = drDisc["Type"]?.ToString().Trim().ToUpper() ?? "";
-                            if (discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR")
+                            string rawType = drDisc["Type"]?.ToString()?.Trim() ?? "";
+                            string discType = rawType.ToUpper();
+                            decimal discAmt = drDisc["Amount"].ToSafeDecimal();
+
+                            DiscountModel disc = _disc?.Find(x =>
+                                (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(x.MallDiscount) && x.MallDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)));
+                            string mappedCode = disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount) ? disc.MallDiscount.Trim().ToUpper() : discType;
+
+                            // Government Mandated Discounts (#08): Senior Citizen, PWD, NAAC, Solo Parent, Medal of Valor
+                            bool isGovMandated = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
+                                                 discType == "PWD" || discType.Contains("DISABILITY") ||
+                                                 discType == "NAAC" || discType.Contains("ATHLETE") ||
+                                                 discType == "SOLO PARENT" || discType == "SOLOPARENT" || discType == "SP" ||
+                                                 discType == "MEDAL OF VALOR" || discType == "MOV" ||
+                                                 mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "NAAC" || mappedCode == "SP" || mappedCode == "MOV";
+
+                            if (isGovMandated)
                             {
-                                DLY_TOT_SCDISC += drDisc["Amount"].ToSafeDecimal();
-                                DLY_NON_TAXSLS += drDisc["Amount"].ToSafeDecimal();
+                                DLY_TOT_SCDISC += discAmt;
                             }
                             else
                             {
-                                DLY_TOT_OTHDISC += drDisc["Amount"].ToSafeDecimal();
+                                DLY_TOT_OTHDISC += discAmt;
+                            }
+
+                            // Non-taxable (VAT Exempt) check for #07:
+                            // Senior and PWD are VAT-exempt. Diplomat and Zero Rated are also VAT-exempt (No VAT).
+                            // NAAC, Solo Parent, and Medal of Valor are WITH VAT, so they do NOT add to Non-Taxable Sales.
+                            bool isVatExempt = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
+                                               discType == "PWD" || discType.Contains("DISABILITY") ||
+                                               discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" ||
+                                               mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED";
+
+                            if (isVatExempt)
+                            {
+                                if (discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED")
+                                {
+                                    DLY_NON_TAXSLS += dr["Total"].ToSafeDecimal();
+                                }
+                                else
+                                {
+                                    DLY_NON_TAXSLS += discAmt;
+                                }
                             }
                         }
                     }
@@ -596,10 +673,21 @@ namespace Mega_World_Mall_Linking.Views
                         foreach (DataRow dvp in dtpay.Rows)
                         {
                             decimal payVal = dvp["Amount"].ToSafeDecimal();
-                            string payName = dvp["Name"]?.ToString() ?? "";
-                            if (payName.Trim().ToUpper() == "CASH")
+                            string payName = dvp["Name"]?.ToString()?.Trim() ?? "";
+                            string payUpper = payName.ToUpper();
+
+                            var payModel = _payment?.Find(x => x.WboxPayment != null && x.WboxPayment.Trim().Equals(payName, StringComparison.OrdinalIgnoreCase));
+                            string mappedPay = payModel != null && !string.IsNullOrWhiteSpace(payModel.MallPayment) ? payModel.MallPayment.Trim().ToUpper() : "";
+
+                            if (mappedPay == "CASH" || payUpper == "CASH")
                             {
                                 DLY_TOT_CASHSLS += payVal;
+                            }
+                            else if (mappedPay == "CHARGE" || mappedPay == "CREDIT CARD" || mappedPay == "DEBIT CARD" || mappedPay == "CARD" ||
+                                     payUpper == "CREDIT CARD" || payUpper == "DEBIT CARD" || payUpper == "CARD" ||
+                                     payUpper.Contains("CREDIT") || payUpper.Contains("DEBIT") || payUpper == "CHARGE")
+                            {
+                                DLY_TOT_CHRGESLS += payVal;
                             }
                             else
                             {
@@ -612,20 +700,44 @@ namespace Mega_World_Mall_Linking.Views
                     DLY_CTRLNO = 1;
                     DLY_TOT_SLSTRAN = tranCnt;
 
-                    salesTypeList.Add(new DailyDataDetails
+                    decimal orderTotal = dr["Total"].ToSafeDecimal();
+                    string sType = string.IsNullOrWhiteSpace(SLS_TYPE) ? "01" : SLS_TYPE;
+                    if (salesTypeTotals.ContainsKey(sType))
                     {
-                        SLS_TYPE = SLS_TYPE,
-                        NET_SLS = dr["Total"].ToSafeDecimal()
-                    });
+                        salesTypeTotals[sType] += orderTotal;
+                    }
+                    else
+                    {
+                        salesTypeTotals[sType] = orderTotal;
+                    }
 
                     var details = new DailyDataDetails
                     {
                         TRAN_ID = dr["OrderNo"].ToString(),
-                        SLS_TYPE = SLS_TYPE,
-                        NET_SLS = dr["Total"].ToSafeDecimal()
+                        SLS_TYPE = sType,
+                        NET_SLS = orderTotal
                     };
                     dailyDataDetailsStorage.Add(details, false);
                 }
+            }
+
+            // Aggregate Fields 21 & 22: One entry per unique Sales Type with daily total net sales
+            foreach (var kvp in salesTypeTotals)
+            {
+                salesTypeList.Add(new DailyDataDetails
+                {
+                    SLS_TYPE = kvp.Key,
+                    NET_SLS = kvp.Value
+                });
+            }
+
+            if (salesTypeList.Count == 0)
+            {
+                salesTypeList.Add(new DailyDataDetails
+                {
+                    SLS_TYPE = string.IsNullOrWhiteSpace(SLS_TYPE) ? "01" : SLS_TYPE,
+                    NET_SLS = 0.00M
+                });
             }
 
                 string GetStrTran = string.Format(Queries.SELECT_TABLE_WHERE_LIMIT_ASC, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
