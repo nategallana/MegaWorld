@@ -306,7 +306,9 @@ namespace Mega_World_Mall_Linking.Views
                         { 
                             foreach (DataRow drHR1 in sHR.Rows)
                             {
-                                DateTime sHR1 = drHR1["Time_Now"].ToSafeDateTime();
+                                DateTime sHR1 = (drHR1.Table.Columns.Contains("Time") && !string.IsNullOrEmpty(drHR1["Time"]?.ToString()))
+                                    ? drHR1["Time"].ToSafeDateTime()
+                                    : drHR1["Time_Now"].ToSafeDateTime();
                                 string shr1 = sHR1.ToString("HH");
                                 s = int.Parse(shr1);
                             }
@@ -315,7 +317,9 @@ namespace Mega_World_Mall_Linking.Views
                         {
                             foreach (DataRow drHR2 in eHR.Rows)
                             {
-                                DateTime eHR1 = drHR2["Time_Now"].ToSafeDateTime();
+                                DateTime eHR1 = (drHR2.Table.Columns.Contains("Time") && !string.IsNullOrEmpty(drHR2["Time"]?.ToString()))
+                                    ? drHR2["Time"].ToSafeDateTime()
+                                    : drHR2["Time_Now"].ToSafeDateTime();
                                 string ehr1 = eHR1.ToString("HH");
                                 e = int.Parse(ehr1);
                             }
@@ -333,7 +337,8 @@ namespace Mega_World_Mall_Linking.Views
                             HR_NETSLS = 0.00M;
                             string str_HR = string.Format("{0:D2}:00:00", hr);
                             string end_HR = string.Format("{0:D2}:59:59", hr);
-                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}' and Time_Now Between '{1}' and '{2}'", dateNow.ToString("yyyyMMdd"), str_HR, end_HR)));
+                            string timeCol = (dtHourly.Columns.Contains("Time")) ? "Time" : "Time_Now";
+                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}' and {1} Between '{2}' and '{3}'", dateNow.ToString("yyyyMMdd"), timeCol, str_HR, end_HR)));
                             DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
 
                             if (dtHourlyDetails.Rows.Count > 0)
@@ -410,59 +415,83 @@ namespace Mega_World_Mall_Linking.Views
             InitializeDiscountData();
             discountEntries.Clear();
             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
-            int Batch;
-            string transcation = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDAte = '{0}'", dateNow.ToString("yyyyMMdd"))));
-            DataTable dtTransaction = _dbsqlite.GetDataTable(transcation);
 
-            if (dtTransaction.Rows.Count > 0)
-            {
-                foreach (DataRow dr in dtTransaction.Rows)
-                {
-                    if (!discountDataStorage.IsExistValue("ORDER_ID", dr["OrderNo"].ToString()))
-                    {
-                        InitializeDiscountData();
-                        string getDiscount = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.DISCDATA, (string.Format("OrderNo = '{0}'", dr["OrderNo"].ToString())));
-                        DataTable discount = _dbsqlite.GetDataTable(getDiscount);
-
-                        if (discount.Rows.Count > 0)
-                        {
-                            foreach (DataRow dsr in discount.Rows)
-                            {
-                                DS_TRN_ID = dsr["OrderNo"].ToString();
-                                string discountName = GetSalesDiscount(DS_TRN_ID, discount);
-                                DS_DISCCODE = discountName;
-                                DiscountModel disDisc = _disc.Find(x => x.WboxDiscount != null && x.WboxDiscount.Trim().Equals(discountName.Trim(), StringComparison.OrdinalIgnoreCase));
-                                DS_DISCRIPT = disDisc != null ? disDisc.MallDiscount : discountName;
-                                DS_DISCAMT = DS_DISCAMT + dsr["Amount"].ToSafeDecimal();
-
-                                discountEntries.Add(new DiscountDetailEntry
-                                {
-                                    DiscountCode = DS_DISCCODE,
-                                    DiscountDescription = DS_DISCRIPT,
-                                    DiscountAmount = DS_DISCAMT
-                                });
-                                var DiscData = new DiscountData
-                                {
-                                    ORDER_ID = DS_TRN_ID,
-                                    DISCOUNT_CODE = DS_DISCCODE,
-                                    DISCOUNT_DESC = DS_DISCRIPT,
-                                    DISCOUNT_AMT = DS_DISCAMT
-                                };
-                            }
-                        }
-                    }
-                }
-            }
             int PREV_CNTR = 0;
             DataTable dtEOD = dailyDataStorage.GetLastEOD(TER_NO);
-            if (dtEOD.Rows.Count > 0)
+            if (dtEOD != null && dtEOD.Rows.Count > 0)
             {
                 foreach (DataRow rowEOD in dtEOD.Rows)
                 {
                     PREV_CNTR = rowEOD["EOD_CNT"].ToSafeInteger();
                 }
             }
-            DS_BATCHNO = PREV_CNTR + 1;
+            DS_BATCHNO = DLY_EODCNT > 0 ? DLY_EODCNT : Math.Max(1, PREV_CNTR);
+
+            string transaction = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd")));
+            DataTable dtTransaction = _dbsqlite.GetDataTable(transaction);
+
+            var groupedDiscounts = new Dictionary<string, DiscountDetailEntry>(StringComparer.OrdinalIgnoreCase);
+
+            if (dtTransaction != null && dtTransaction.Rows.Count > 0)
+            {
+                foreach (DataRow dr in dtTransaction.Rows)
+                {
+                    string orderNo = dr["OrderNo"]?.ToString() ?? string.Empty;
+                    if (string.IsNullOrEmpty(orderNo)) continue;
+
+                    string getDiscount = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.DISCDATA, string.Format("OrderNo = '{0}'", orderNo));
+                    DataTable discount = _dbsqlite.GetDataTable(getDiscount);
+
+                    if (discount != null && discount.Rows.Count > 0)
+                    {
+                        foreach (DataRow dsr in discount.Rows)
+                        {
+                            decimal amount = dsr["Amount"].ToSafeDecimal();
+                            if (amount <= 0) continue;
+
+                            string rawType = dsr["Type"]?.ToString()?.Trim() ?? string.Empty;
+                            if (string.IsNullOrEmpty(rawType)) continue;
+
+                            DiscountModel disc = _disc?.Find(x =>
+                                (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
+                                (!string.IsNullOrEmpty(x.MallDiscount) && x.MallDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)));
+
+                            string discCode = disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount) ? disc.MallDiscount.Trim() : rawType;
+                            string discDesc = disc != null && !string.IsNullOrWhiteSpace(disc.WboxDiscount) ? disc.WboxDiscount.Trim() : rawType;
+
+                            if (!discountDataStorage.IsExistValue("ORDER_ID", orderNo))
+                            {
+                                var DiscData = new DiscountData
+                                {
+                                    ORDER_ID = orderNo,
+                                    DISCOUNT_CODE = discCode,
+                                    DISCOUNT_DESC = discDesc,
+                                    DISCOUNT_AMT = amount
+                                };
+                                discountDataStorage.Add(DiscData, false);
+                            }
+
+                            string key = $"{discCode}|{discDesc}";
+                            if (groupedDiscounts.ContainsKey(key))
+                            {
+                                groupedDiscounts[key].DiscountAmount += amount;
+                            }
+                            else
+                            {
+                                groupedDiscounts[key] = new DiscountDetailEntry
+                                {
+                                    DiscountCode = discCode,
+                                    DiscountDescription = discDesc,
+                                    DiscountAmount = amount
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+
+            discountEntries.AddRange(groupedDiscounts.Values);
+
             DiscountDetailFile data = new DiscountDetailFile
             {
                 TenantCode = TENT_CODE,
@@ -471,7 +500,6 @@ namespace Mega_World_Mall_Linking.Views
                 BusinessDate = dateNow,
                 Entries = discountEntries
             };
-            //DiscountDetailFile.GenerateFile(data, outputDirectory);
             DiscountDetailFileGenerator.GenerateFile(data, SLS_LOC);
         }
         public void DailySales()
@@ -501,7 +529,8 @@ namespace Mega_World_Mall_Linking.Views
                         DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
                         foreach (DataRow drDisc in dtDisc.Rows)
                         {
-                            if (drDisc["Type"].ToString().ToUpper() == "SCD" || drDisc["Type"].ToString().ToUpper() == "SENIOR CITIZEN")
+                            string discType = drDisc["Type"]?.ToString().Trim().ToUpper() ?? "";
+                            if (discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR")
                             {
                                 DLY_TOT_SCDISC = DLY_TOT_SCDISC + drDisc["Amount"].ToSafeDecimal();
                                 DLY_NON_TAXSLS = DLY_NON_TAXSLS + dr["Total"].ToSafeDecimal();

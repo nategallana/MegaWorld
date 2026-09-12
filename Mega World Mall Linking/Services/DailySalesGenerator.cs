@@ -41,14 +41,14 @@ namespace Mega_World_Mall_Linking.Services
             lines.Add("15" + FormatAmount(salesReport.TotalChargeSales)) ;
             lines.Add("16" + FormatAmount(salesReport.TotalGCOtherSales));
             lines.Add("17" + FormatAmount(salesReport.TotalVoidAmount));
-            lines.Add("18" + salesReport.TotalCustomerCount.ToString().PadLeft(3, '0'));
+            lines.Add("18" + salesReport.TotalCustomerCount.ToString());
             lines.Add("19" + salesReport.ControlNumber);
             lines.Add("20" + salesReport.TotalNumberOfTransactions.ToString());
 
             // 2. Repeating SalesPerType lines
             foreach (var type in salesPerTypeList)
             {
-                string salesType = type.SLS_TYPE.PadLeft(2, '0');
+                string salesType = (type.SLS_TYPE ?? "01").PadLeft(2, '0');
                 string netSales = FormatAmount(type.NET_SLS);
 
                 lines.Add("21" + salesType);
@@ -56,7 +56,8 @@ namespace Mega_World_Mall_Linking.Services
             }
 
             // 3. Generate file name
-            string fileName = GenerateFileName(tenantCode, terminalNumber, batchNumber, businessDate);
+            int safeBatch = batchNumber <= 0 ? 1 : batchNumber;
+            string fileName = GenerateFileName(tenantCode, terminalNumber, safeBatch, businessDate);
             string fullPath = Path.Combine(outputDirectory, fileName);
 
             File.WriteAllLines(fullPath, lines);
@@ -66,15 +67,20 @@ namespace Mega_World_Mall_Linking.Services
         private static string FormatAmount(object value)
         {
             decimal amount = Convert.ToDecimal(value);
-            int cents = (int)(amount * 100);
-            return cents.ToString().PadLeft(8, '0');
+            long cents = (long)Math.Round(amount * 100, MidpointRounding.AwayFromZero);
+            if (cents == 0)
+            {
+                return "000";
+            }
+            return cents.ToString();
         }
 
         private static string GenerateFileName(string tenantID, int terminalNo, int batchNo, DateTime date)
         {
             string tenantCode = (tenantID ?? "").PadRight(4, '0').Substring(0, 4).ToUpper();
             string terminal = terminalNo.ToString("D2");
-            string batch = batchNo.ToString();
+            int safeBatch = batchNo <= 0 ? 1 : batchNo;
+            string batch = safeBatch.ToString();
 
             string month = date.Month <= 9
                 ? date.Month.ToString()
