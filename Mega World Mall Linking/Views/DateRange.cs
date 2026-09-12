@@ -516,7 +516,7 @@ namespace Mega_World_Mall_Linking.Views
             DLY_TERNO = TER_NO;
             DLY_DATE = dateNow.ToString("MMddyyyy");
 
-            string GetHourlyData = $"SELECT * FROM ORDERDATA WHERE AccDate = '{dateNow:yyyyMMdd}'";
+            string GetHourlyData = $"SELECT * FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{dateNow:yyyyMMdd}'";
             DataTable dtHourly = _dbsqlite.GetDataTable(GetHourlyData);
 
             List<DailyDataDetails> salesTypeList = new List<DailyDataDetails>();
@@ -528,13 +528,14 @@ namespace Mega_World_Mall_Linking.Views
                     tranCnt++;
                     CusCnt++;
 
-                    string getDisc = $"SELECT * FROM DISCDATA WHERE OrderNo = '{dr["OrderNo"]}'";
+                    string getDisc = $"SELECT * FROM {SqlLiteTable.DISCDATA} WHERE OrderNo = '{dr["OrderNo"]}'";
                     DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
                     if (dtDisc != null)
                     {
                         foreach (DataRow drDisc in dtDisc.Rows)
                         {
-                            if (drDisc["Type"].ToString().ToUpper() == "SC" || drDisc["Type"].ToString().ToUpper() == "SENIOR CITIZEN")
+                            string discType = drDisc["Type"]?.ToString().Trim().ToUpper() ?? "";
+                            if (discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN")
                             {
                                 DLY_TOT_SCDISC += drDisc["Amount"].ToSafeDecimal();
                                 DLY_NON_TAXSLS += drDisc["Amount"].ToSafeDecimal();
@@ -546,7 +547,7 @@ namespace Mega_World_Mall_Linking.Views
                         }
                     }
 
-                    string getVoided = $"SELECT * FROM VOIDDATA WHERE OrderID = '{dr["OrderNo"]}'";
+                    string getVoided = $"SELECT * FROM {SqlLiteTable.VOIDDATA} WHERE OrderID = '{dr["OrderNo"]}'";
                     DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
                     if (dtVoid != null)
                     {
@@ -559,7 +560,7 @@ namespace Mega_World_Mall_Linking.Views
                     DLY_TOT_TAXAMT += dr["TaxTotal"].ToSafeDecimal();
                     DLY_TOT_SRVC_CHRGE += dr["ServiceCharge"].ToSafeDecimal();
 
-                    string getPayment1 = $"SELECT * FROM PAYMENTDATA WHERE OrderNo = '{dr["OrderNo"]}'";
+                    string getPayment1 = $"SELECT * FROM {SqlLiteTable.PAYMENTDATA} WHERE OrderNo = '{dr["OrderNo"]}'";
                     DataTable dtpay = _dbsqlite.GetDataTable(getPayment1);
                     if (dtpay != null)
                     {

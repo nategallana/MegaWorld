@@ -248,6 +248,8 @@ public class DbSQLite
                 Qty DECIMAL(18,2) DEFAULT 0,
                 Amount DECIMAL(18,2) DEFAULT 0
             );
+            CREATE VIEW IF NOT EXISTS DISCDATA AS SELECT * FROM discountdata;
+            CREATE VIEW IF NOT EXISTS ITEMS AS SELECT * FROM itemdata;
         ");
     }
 
