@@ -26,25 +26,28 @@ namespace Mega_World_Mall_Linking.Services
                 string hourCode = HourCodeHelper.GetHourCode(entry.Timestamp);
                 lines.Add("04" + hourCode);
 
-                int cents = (int)(entry.NetSalesAmount * 100);
+                long cents = (long)Math.Round(entry.NetSalesAmount * 100, MidpointRounding.AwayFromZero);
                 lines.Add("05" + cents.ToString());
                 lines.Add("06" + entry.TransactionCount.ToString());
                 lines.Add("07" + entry.CustomerCount.ToString());
             }
 
             // Fields 08–10: Daily totals
-            int totalCents = (int)(data.TotalNetSalesAmount * 100);
+            long totalCents = (long)Math.Round(data.TotalNetSalesAmount * 100, MidpointRounding.AwayFromZero);
             lines.Add("08" + totalCents.ToString());
             lines.Add("09" + data.TotalTransactionCount.ToString());
             lines.Add("10" + data.TotalCustomerCount.ToString());
 
-            //DateTime date = DateTime.Parse(data.BusinessDate
-            //DateTime date = Convert.ToDateTime(data.BusinessDate);
-            string fileName = GenerateFileName(data.TenantCode, data.POSTerminalNumber,data.DateNoFormat);
+            string fileName = GenerateFileName(data.TenantCode, data.POSTerminalNumber, data.BatchNumber, data.DateNoFormat);
             string fullPath = Path.Combine(outputDirectory, fileName);
 
+            if (!Directory.Exists(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
             File.WriteAllLines(fullPath, lines, Encoding.UTF8);
-            Console.WriteLine("✅ File generated: " + fullPath);
+            Logger.LogInfo($"Hourly Sales file generated: {fileName} in {outputDirectory} (Batch: {data.BatchNumber}, Total Net: {data.TotalNetSalesAmount:N2}, Hours: {data.HourlyEntries.Count})");
         }
         //public static void GenerateFile(HourlySalesFile data, string outputDirectory)
         //{
@@ -85,12 +88,13 @@ namespace Mega_World_Mall_Linking.Services
         //    File.WriteAllLines(filePath, lines);
         //}
 
-        private static string GenerateFileName(string tenantCode, int terminal, DateTime date)
+        private static string GenerateFileName(string tenantCode, int terminal, int batchNumber, DateTime date)
         {
             string safeTenantCode = (tenantCode ?? "").PadRight(4, '0').Substring(0, 4).ToUpper();
+            int safeBatch = Math.Min(9, Math.Max(1, batchNumber));
             string monthCode = date.Month <= 9 ? date.Month.ToString() : ((char)('A' + (date.Month - 10))).ToString();
             string dayCode = date.Day.ToString("D2");
-            return $"H{safeTenantCode}{terminal.ToString("D2")}1.{monthCode}{dayCode}";
+            return $"H{safeTenantCode}{terminal.ToString("D2")}{safeBatch}.{monthCode}{dayCode}";
         }
 
     }

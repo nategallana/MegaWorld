@@ -51,6 +51,10 @@ namespace Mega_World_Mall_Linking.Views
         private int CusCnt;
         private DateTime dateNow;
         private bool _isBackup;
+        private bool AUTO_EOD_ENABLED = true;
+        private string AUTO_EOD_TIME = "23:30";
+        private System.Windows.Forms.Timer autoEodTimer;
+        private DateTime lastAutoEodDate = DateTime.MinValue;
         //public csvhelper herlper = null;
         #region DAILYDATA
         public string DLY_TNTCODE;
@@ -225,6 +229,8 @@ namespace Mega_World_Mall_Linking.Views
                         TEMP_DBLOC = configuration.TempLocation;
                         TEMP_DBNAME = configuration.TempDB;
                         SLS_TYPE = configuration.SalesType;
+                        AUTO_EOD_ENABLED = configuration.AutoEodEnabled;
+                        AUTO_EOD_TIME = string.IsNullOrWhiteSpace(configuration.AutoEodTime) ? "23:30" : configuration.AutoEodTime;
                     }
                 }
             }
@@ -251,6 +257,95 @@ namespace Mega_World_Mall_Linking.Views
             ParadoxTable.ORDERS = (_isBackup ? "ordbkup" : "orders");
             ParadoxTable.PAYMENTS = (_isBackup ? "paybkup" : "payment");
             ParadoxTable.ITEMS = (_isBackup ? "itemBkup" : "orditem");
+
+            Logger.LogInfo($"Megaworld Mall Linking service initialized. Terminal: {TER_NO}, Tenant: {TENT_CODE}, Output Directory: {SLS_LOC}");
+            InitAutoEodTimer();
+        }
+
+        private void InitAutoEodTimer()
+        {
+            try
+            {
+                if (autoEodTimer != null)
+                {
+                    autoEodTimer.Stop();
+                    autoEodTimer.Dispose();
+                }
+
+                autoEodTimer = new System.Windows.Forms.Timer();
+                autoEodTimer.Interval = 30000; // Check every 30 seconds
+                autoEodTimer.Tick += AutoEodTimer_Tick;
+                autoEodTimer.Start();
+                Logger.LogInfo($"Auto EOD timer started. Enabled: {AUTO_EOD_ENABLED}, Scheduled Time: {AUTO_EOD_TIME}");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Failed to initialize Auto EOD timer", ex);
+            }
+        }
+
+        private void AutoEodTimer_Tick(object sender, EventArgs e)
+        {
+            if (!AUTO_EOD_ENABLED) return;
+            if (lastAutoEodDate.Date == DateTime.Today) return;
+
+            DateTime now = DateTime.Now;
+            if (TimeSpan.TryParse(AUTO_EOD_TIME, out TimeSpan scheduledTime))
+            {
+                if (now.TimeOfDay >= scheduledTime)
+                {
+                    RunAutoEod();
+                }
+            }
+        }
+
+        private void RunAutoEod()
+        {
+            lastAutoEodDate = DateTime.Today;
+            Logger.LogInfo($"[Auto EOD] Checking scheduled End of Day for {DateTime.Today:yyyy-MM-dd} (Scheduled: {AUTO_EOD_TIME}, Current: {DateTime.Now:HH:mm:ss})");
+
+            if (_dbsqlite == null)
+            {
+                Logger.LogWarning("[Auto EOD] SQLite database connection is not ready. Auto EOD skipped.");
+                return;
+            }
+
+            string countQuery = $"SELECT COUNT(*) FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{DateTime.Today:yyyyMMdd}'";
+            int count = 0;
+            try
+            {
+                string res = _dbsqlite.ExecuteScalar(countQuery);
+                int.TryParse(res, out count);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Auto EOD] Error querying order count", ex);
+            }
+
+            if (count == 0)
+            {
+                Logger.LogInfo($"[Auto EOD] No sales transactions found for today ({DateTime.Today:yyyy-MM-dd}). Auto EOD skipped for today.");
+                return;
+            }
+
+            try
+            {
+                dateNow = DateTime.Today;
+                HourlySales();
+                DiscountSales();
+                DailySales();
+
+                Logger.LogInfo($"[Auto EOD] End of Day reports successfully generated for {DateTime.Today:yyyy-MM-dd}. Transactions: {count}");
+
+                notifyIcon1.BalloonTipTitle = "Megaworld Mall Linking - Auto EOD";
+                notifyIcon1.BalloonTipText = $"Automatic End of Day completed for {DateTime.Today:yyyy-MM-dd}.\nTotal Transactions: {count}\nFiles saved in: {SLS_LOC}";
+                notifyIcon1.BalloonTipIcon = ToolTipIcon.Info;
+                notifyIcon1.ShowBalloonTip(4000);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Auto EOD] Exception occurred during automated EOD generation", ex);
+            }
         }
 
         private void generateEODToolStripMenuItem_Click(object sender, EventArgs e)
@@ -274,8 +369,11 @@ namespace Mega_World_Mall_Linking.Views
 
         private void endOfDayToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            Logger.LogInfo($"[Manual EOD] End of Day triggered via system tray for {DateTime.Today:yyyy-MM-dd}");
+
             if (_dbsqlite == null)
             {
+                Logger.LogError("[Manual EOD] Database is not initialized.");
                 notifyIcon1.BalloonTipTitle = "Megaworld Mall Linking - End of Day";
                 notifyIcon1.BalloonTipText = "Database is not initialized. Please verify configuration in Settings.";
                 notifyIcon1.BalloonTipIcon = ToolTipIcon.Error;
@@ -291,10 +389,14 @@ namespace Mega_World_Mall_Linking.Views
                 string res = _dbsqlite.ExecuteScalar(countQuery);
                 int.TryParse(res, out count);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Manual EOD] Error querying order count", ex);
+            }
 
             if (count == 0)
             {
+                Logger.LogWarning($"[Manual EOD] No sales transactions found for today ({today:yyyy-MM-dd}).");
                 notifyIcon1.BalloonTipTitle = "Megaworld Mall Linking - End of Day";
                 notifyIcon1.BalloonTipText = $"No sales transactions found for today ({today:yyyy-MM-dd}).\nIf you need to process past dates, please use 'Date Range'.";
                 notifyIcon1.BalloonTipIcon = ToolTipIcon.Warning;
@@ -302,16 +404,26 @@ namespace Mega_World_Mall_Linking.Views
                 return;
             }
 
-            dateNow = today;
-            HourlySales();
-            DiscountSales();
-            DailySales();
+            try
+            {
+                dateNow = today;
+                HourlySales();
+                DiscountSales();
+                DailySales();
 
-            MessageBox.Show(
-                $"End of Day reports have been successfully generated for {today:yyyy-MM-dd}.\n\nTotal Transactions: {count}\nFiles saved in: {SLS_LOC}",
-                "End of Day Completed",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+                Logger.LogInfo($"[Manual EOD] End of Day reports successfully generated for {today:yyyy-MM-dd}. Transactions: {count}, Output: {SLS_LOC}");
+
+                MessageBox.Show(
+                    $"End of Day reports have been successfully generated for {today:yyyy-MM-dd}.\n\nTotal Transactions: {count}\nFiles saved in: {SLS_LOC}",
+                    "End of Day Completed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("[Manual EOD] Error during manual EOD generation", ex);
+                MessageBox.Show($"Error generating End of Day reports: {ex.Message}", "End of Day Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         private void HourlySales()
         {
@@ -322,130 +434,120 @@ namespace Mega_World_Mall_Linking.Views
             if (dateNow == DateTime.MinValue) dateNow = DateTime.Today;
             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
 
-            string GetHourlyData = string.Format(Queries.SELECT_TABLE_Top1, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd"))));
-            DataTable dtHourly = _dbsqlite.GetDataTable(GetHourlyData);
-
-            if (dtHourly.Rows.Count > 0)
+            int s = 0;
+            int e = 0;
+            string startQuery = $"SELECT CASE WHEN Time IS NOT NULL AND Time != '' THEN Time ELSE Time_Now END AS EffectiveTime FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{dateNow:yyyyMMdd}' AND ((Time IS NOT NULL AND Time != '') OR (Time_Now IS NOT NULL AND Time_Now != '')) ORDER BY EffectiveTime ASC LIMIT 1";
+            DataTable sHR = _dbsqlite.GetDataTable(startQuery);
+            if (sHR != null && sHR.Rows.Count > 0)
             {
-                foreach (DataRow dr in dtHourly.Rows)
+                if (DateTime.TryParse(sHR.Rows[0]["EffectiveTime"]?.ToString(), out DateTime dtStart))
                 {
-                    if (!hourlyDataStorage.IsExistValue("TRAN_ID", dr["OrderNo"].ToString()))
+                    s = dtStart.Hour;
+                }
+            }
+
+            string endQuery = $"SELECT CASE WHEN Time IS NOT NULL AND Time != '' THEN Time ELSE Time_Now END AS EffectiveTime FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{dateNow:yyyyMMdd}' AND ((Time IS NOT NULL AND Time != '') OR (Time_Now IS NOT NULL AND Time_Now != '')) ORDER BY EffectiveTime DESC LIMIT 1";
+            DataTable eHR = _dbsqlite.GetDataTable(endQuery);
+            if (eHR != null && eHR.Rows.Count > 0)
+            {
+                if (DateTime.TryParse(eHR.Rows[0]["EffectiveTime"]?.ToString(), out DateTime dtEnd))
+                {
+                    e = dtEnd.Hour;
+                }
+            }
+
+            HR_TNTCODE = TENT_CODE.ToString();
+            HR_TERNO = TER_NO.ToString();
+            HR_DATE = dateNow.ToString("MMddyyyy");
+
+            if (sHR != null && sHR.Rows.Count > 0)
+            {
+                #region hourly Details
+                for (int hr = s; hr <= e; hr++)
+                {
+                    int hrTrnCnt = 0;
+                    int hrCusCnt = 0;
+                    decimal srvcCharge = 0.00M;
+                    decimal hrNetSales = 0.00M;
+                    string str_HR = string.Format("{0:D2}:00:00", hr);
+                    string end_HR = string.Format("{0:D2}:59:59", hr);
+
+                    string gethourlydetail = $"SELECT * FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{dateNow:yyyyMMdd}' AND (CASE WHEN Time IS NOT NULL AND Time != '' THEN Time ELSE Time_Now END) BETWEEN '{str_HR}' AND '{end_HR}'";
+                    DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
+
+                    if (dtHourlyDetails != null && dtHourlyDetails.Rows.Count > 0)
                     {
-                        tranCnt = tranCnt + 1;
-
-                        DateTime busdate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day);
-                        int s = 0;
-                        int e = 0;
-                        string Start = string.Format(Queries.GET_STARTHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
-                        DataTable sHR = _dbsqlite.GetDataTable(Start);
-                        string end = string.Format(Queries.GET_ENDHOUR, SqlLiteTable.ORDERDATA, dateNow.ToString("yyyyMMdd"));
-                        DataTable eHR = _dbsqlite.GetDataTable(end);
-                        if (sHR.Rows.Count > 0)
-                        { 
-                            foreach (DataRow drHR1 in sHR.Rows)
-                            {
-                                DateTime sHR1 = (drHR1.Table.Columns.Contains("Time") && !string.IsNullOrEmpty(drHR1["Time"]?.ToString()))
-                                    ? drHR1["Time"].ToSafeDateTime()
-                                    : drHR1["Time_Now"].ToSafeDateTime();
-                                string shr1 = sHR1.ToString("HH");
-                                s = int.Parse(shr1);
-                            }
-                        }
-                        if (eHR.Rows.Count > 0)
+                        foreach (DataRow Hdr in dtHourlyDetails.Rows)
                         {
-                            foreach (DataRow drHR2 in eHR.Rows)
-                            {
-                                DateTime eHR1 = (drHR2.Table.Columns.Contains("Time") && !string.IsNullOrEmpty(drHR2["Time"]?.ToString()))
-                                    ? drHR2["Time"].ToSafeDateTime()
-                                    : drHR2["Time_Now"].ToSafeDateTime();
-                                string ehr1 = eHR1.ToString("HH");
-                                e = int.Parse(ehr1);
-                            }
+                            bool isVoided = (Hdr.Table.Columns.Contains("Void") && Hdr["Void"] != DBNull.Value &&
+                                            (Hdr["Void"].ToString() == "1" || Hdr["Void"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase)));
+                            string getVoided = $"SELECT * FROM {SqlLiteTable.VOIDDATA} WHERE OrderID = '{Hdr["OrderNo"]}'";
+                            DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
+                            if (dtVoid != null && dtVoid.Rows.Count > 0) isVoided = true;
+                            if (isVoided) continue;
+
+                            hrTrnCnt++;
+                            hrCusCnt++;
+                            hrNetSales += Hdr["Total"].ToSafeDecimal();
+                            srvcCharge += Hdr["ServiceCharge"].ToSafeDecimal();
                         }
 
-                        HR_TNTCODE = TENT_CODE.ToString();
-                        HR_TERNO = TER_NO.ToString();
-                        HR_DATE = busdate.ToString("MMddyyyy");
-                        #region hourly Details
-                        for (int hr = s; hr <= e; hr++)
+                        if (hrTrnCnt > 0)
                         {
-                            int hrTrnCnt = 0;
-                            int hrCucCnt = 0;
-                            decimal srvcCharge = 0;
-                            HR_NETSLS = 0.00M;
-                            string str_HR = string.Format("{0:D2}:00:00", hr);
-                            string end_HR = string.Format("{0:D2}:59:59", hr);
-                            string timeCol = (dtHourly.Columns.Contains("Time")) ? "Time" : "Time_Now";
-                            string gethourlydetail = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, (string.Format("AccDate = '{0}' and {1} Between '{2}' and '{3}'", dateNow.ToString("yyyyMMdd"), timeCol, str_HR, end_HR)));
-                            DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
+                            DateTime hour = dateNow.Date.AddHours(hr);
+                            HR_TOT_SLSCNT += hrTrnCnt;
+                            HR_TOT_CUSCNT += hrCusCnt;
+                            HR_TOT_NETSLS += hrNetSales;
 
-                            if (dtHourlyDetails.Rows.Count > 0)
+                            hourlySalesEntries.Add(new HourlySalesEntry
                             {
-                                InitializedHourlyDetailData();
-                                HR_CODE = str_HR.ToString();
-                                foreach (DataRow Hdr in dtHourlyDetails.Rows)
-                                { 
-                                    hrTrnCnt = hrTrnCnt + 1;
-                                    hrCucCnt = hrCucCnt + 1;
-                                    HR_NETSLS = HR_NETSLS + Hdr["Total"].ToSafeDecimal();
-                                    srvcCharge = srvcCharge + Hdr["ServiceCharge"].ToSafeDecimal();
-                                }
-                                DateTime hour = busdate.Date.AddHours(hr);
-                                HR_TOT_SLSCNT = HR_TOT_SLSCNT + hrTrnCnt;
-                                HR_TOT_CUSCNT = HR_TOT_CUSCNT + hrCucCnt;
-                                HR_TOT_NETSLS = HR_TOT_NETSLS + HR_NETSLS;
-                                hourlySalesEntries.Add(new HourlySalesEntry
-                                {
-                                    Timestamp = hour,
-                                    NetSalesAmount = HR_NETSLS,
-                                    TransactionCount = hrTrnCnt,
-                                    CustomerCount = hrCucCnt
-                                });
-                                #region saving to temp.db(HOURLY)
-                                var HourlySalesDetails = new HourlyDataDetails
-                                {
-                                    TRAN_ID = dr["OrderNo"].ToString(),
-                                    HOUR_CODE = hour.ToString(),
-                                    HNET_SLS = HR_NETSLS,
-                                    TRN_NO = hrTrnCnt,
-                                    CUS_NO = hrCucCnt
-                                };
+                                Timestamp = hour,
+                                NetSalesAmount = hrNetSales,
+                                TransactionCount = hrTrnCnt,
+                                CustomerCount = hrCusCnt
+                            });
 
-                                hourlyDataDetailsStorage.Add(HourlySalesDetails, false);
-                                #endregion 
-                            }
+                            var HourlySalesDetails = new HourlyDataDetails
+                            {
+                                TRAN_ID = dtHourlyDetails.Rows[0]["OrderNo"].ToString(),
+                                HOUR_CODE = hour.ToString(),
+                                HNET_SLS = hrNetSales,
+                                TRN_NO = hrTrnCnt,
+                                CUS_NO = hrCusCnt
+                            };
+                            hourlyDataDetailsStorage.Add(HourlySalesDetails, false);
                         }
-                        #endregion
-
-                        #region creating text file for Hourly
-                        var salesFile = new HourlySalesFile
-                        {
-                            TenantCode = HR_TNTCODE,
-                            POSTerminalNumber = HR_TERNO.ToSafeInteger(),
-                            BusinessDate = HR_DATE,
-                            HourlyEntries = hourlySalesEntries,
-                            TotalNetSalesAmount = HR_TOT_NETSLS,
-                            TotalTransactionCount = HR_TOT_SLSCNT,
-                            TotalCustomerCount = HR_TOT_CUSCNT,
-                            DateNoFormat = busdate
-                        };
-
-                        var hourSales = new HourlyData
-                        {
-                            TENANTCODE = HR_TNTCODE,
-                            TER_NO = HR_TERNO,
-                            TRAN_ID = dr["OrderNo"].ToString(),
-                            BUS_DATE = HR_DATE,
-                            TOT_NET = HR_TOT_NETSLS,
-                            TOT_CUS = HR_TOT_CUSCNT,
-                            TOT_TRN = HR_TOT_SLSCNT
-                        };
-                        hourlyDataStorage.Add(hourSales, false);
-                        #endregion
-
-                        HourlySalesFileGenerator.GenerateFile(salesFile, SLS_LOC);
                     }
                 }
+                #endregion
+
+                int batch = dailyDataStorage.GetDailyBatchNumber(TER_NO, dateNow);
+                var salesFile = new HourlySalesFile
+                {
+                    TenantCode = HR_TNTCODE,
+                    POSTerminalNumber = HR_TERNO.ToSafeInteger(),
+                    BusinessDate = HR_DATE,
+                    HourlyEntries = hourlySalesEntries,
+                    TotalNetSalesAmount = HR_TOT_NETSLS,
+                    TotalTransactionCount = HR_TOT_SLSCNT,
+                    TotalCustomerCount = HR_TOT_CUSCNT,
+                    DateNoFormat = dateNow,
+                    BatchNumber = batch
+                };
+
+                var hourSales = new HourlyData
+                {
+                    TENANTCODE = HR_TNTCODE,
+                    TER_NO = HR_TERNO,
+                    TRAN_ID = sHR.Rows[0]["EffectiveTime"].ToString(),
+                    BUS_DATE = HR_DATE,
+                    TOT_NET = HR_TOT_NETSLS,
+                    TOT_CUS = HR_TOT_CUSCNT,
+                    TOT_TRN = HR_TOT_SLSCNT
+                };
+                hourlyDataStorage.Add(hourSales, false);
+
+                HourlySalesFileGenerator.GenerateFile(salesFile, SLS_LOC);
             }
         }
         private void DiscountSales()
@@ -455,16 +557,7 @@ namespace Mega_World_Mall_Linking.Views
             if (dateNow == DateTime.MinValue) dateNow = DateTime.Today;
             dateNow = new DateTime(dateNow.Year, dateNow.Month, dateNow.Day);
 
-            int PREV_CNTR = 0;
-            DataTable dtEOD = dailyDataStorage.GetLastEOD(TER_NO);
-            if (dtEOD != null && dtEOD.Rows.Count > 0)
-            {
-                foreach (DataRow rowEOD in dtEOD.Rows)
-                {
-                    PREV_CNTR = rowEOD["EOD_CNT"].ToSafeInteger();
-                }
-            }
-            DS_BATCHNO = DLY_EODCNT > 0 ? DLY_EODCNT : Math.Max(1, PREV_CNTR);
+            DS_BATCHNO = dailyDataStorage.GetDailyBatchNumber(TER_NO, dateNow);
 
             string transaction = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.ORDERDATA, string.Format("AccDate = '{0}'", dateNow.ToString("yyyyMMdd")));
             DataTable dtTransaction = _dbsqlite.GetDataTable(transaction);
@@ -477,6 +570,13 @@ namespace Mega_World_Mall_Linking.Views
                 {
                     string orderNo = dr["OrderNo"]?.ToString() ?? string.Empty;
                     if (string.IsNullOrEmpty(orderNo)) continue;
+
+                    bool isVoided = (dr.Table.Columns.Contains("Void") && dr["Void"] != DBNull.Value &&
+                                    (dr["Void"].ToString() == "1" || dr["Void"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase)));
+                    string getVoided = string.Format("SELECT * FROM {0} WHERE OrderID = '{1}'", SqlLiteTable.VOIDDATA, orderNo);
+                    DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
+                    if (dtVoid != null && dtVoid.Rows.Count > 0) isVoided = true;
+                    if (isVoided) continue;
 
                     string getDiscount = string.Format(Queries.SELECT_TABLE_WHERE, SqlLiteTable.DISCDATA, string.Format("OrderNo = '{0}'", orderNo));
                     DataTable discount = _dbsqlite.GetDataTable(getDiscount);
@@ -597,71 +697,82 @@ namespace Mega_World_Mall_Linking.Views
                 foreach (DataRow dr in dtDaily.Rows)
                 {
                     
-                        tranCnt++;
-                        CusCnt++;
+                    bool isVoided = (dr.Table.Columns.Contains("Void") && dr["Void"] != DBNull.Value &&
+                                    (dr["Void"].ToString() == "1" || dr["Void"].ToString().Equals("true", StringComparison.OrdinalIgnoreCase)));
 
-                        //DLY_TRAN_ID = dr["OrderNo"].ToString();
-                        DLY_TNTCODE = TENT_CODE;
-                        DLY_TERNO = TER_NO;
-                        DLY_DATE = dateNow.ToString("MMddyyyy");
+                    string getVoided = $"SELECT * FROM voiddata WHERE OrderID = '{dr["OrderNo"]}'";
+                    DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
+                    if (dtVoid != null && dtVoid.Rows.Count > 0)
+                    {
+                        isVoided = true;
+                    }
 
-                        string getDisc = $"SELECT * FROM discountdata WHERE OrderNo = '{dr["OrderNo"]}'";
-                        DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
-                        foreach (DataRow drDisc in dtDisc.Rows)
+                    if (isVoided)
+                    {
+                        DLY_TOT_VOIDAMT += dr["Total"].ToSafeDecimal();
+                        continue;
+                    }
+
+                    tranCnt++;
+                    CusCnt++;
+
+                    DLY_TNTCODE = TENT_CODE;
+                    DLY_TERNO = TER_NO;
+                    DLY_DATE = dateNow.ToString("MMddyyyy");
+
+                    bool orderIsVatExempt = false;
+                    decimal orderVatExemptDiscounts = 0.00M;
+
+                    string getDisc = $"SELECT * FROM discountdata WHERE OrderNo = '{dr["OrderNo"]}'";
+                    DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
+                    foreach (DataRow drDisc in dtDisc.Rows)
+                    {
+                        string rawType = drDisc["Type"]?.ToString()?.Trim() ?? "";
+                        string discType = rawType.ToUpper();
+                        decimal discAmt = drDisc["Amount"].ToSafeDecimal();
+
+                        DiscountModel disc = _disc?.Find(x =>
+                            (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(x.MallDiscount) && x.MallDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)));
+                        string mappedCode = disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount) ? disc.MallDiscount.Trim().ToUpper() : discType;
+
+                        // Government Mandated Discounts (#08): Senior Citizen, PWD, NAAC, Solo Parent, Medal of Valor
+                        bool isGovMandated = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
+                                             discType == "PWD" || discType.Contains("DISABILITY") ||
+                                             discType == "NAAC" || discType.Contains("ATHLETE") ||
+                                             discType == "SOLO PARENT" || discType == "SOLOPARENT" || discType == "SP" ||
+                                             discType == "MEDAL OF VALOR" || discType == "MOV" ||
+                                             mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "NAAC" || mappedCode == "SP" || mappedCode == "MOV";
+
+                        if (isGovMandated)
                         {
-                            string rawType = drDisc["Type"]?.ToString()?.Trim() ?? "";
-                            string discType = rawType.ToUpper();
-                            decimal discAmt = drDisc["Amount"].ToSafeDecimal();
-
-                            DiscountModel disc = _disc?.Find(x =>
-                                (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
-                                (!string.IsNullOrEmpty(x.MallDiscount) && x.MallDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)));
-                            string mappedCode = disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount) ? disc.MallDiscount.Trim().ToUpper() : discType;
-
-                            // Government Mandated Discounts (#08): Senior Citizen, PWD, NAAC, Solo Parent, Medal of Valor
-                            bool isGovMandated = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
-                                                 discType == "PWD" || discType.Contains("DISABILITY") ||
-                                                 discType == "NAAC" || discType.Contains("ATHLETE") ||
-                                                 discType == "SOLO PARENT" || discType == "SOLOPARENT" || discType == "SP" ||
-                                                 discType == "MEDAL OF VALOR" || discType == "MOV" ||
-                                                 mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "NAAC" || mappedCode == "SP" || mappedCode == "MOV";
-
-                            if (isGovMandated)
-                            {
-                                DLY_TOT_SCDISC = DLY_TOT_SCDISC + discAmt;
-                            }
-                            else
-                            {
-                                DLY_TOT_OTHDISC = DLY_TOT_OTHDISC + discAmt;
-                            }
-
-                            // Non-taxable (VAT Exempt) check for #07:
-                            // Senior and PWD are VAT-exempt. Diplomat and Zero Rated are also VAT-exempt (No VAT).
-                            // NAAC, Solo Parent, and Medal of Valor are WITH VAT, so they do NOT add to Non-Taxable Sales.
-                            bool isVatExempt = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
-                                               discType == "PWD" || discType.Contains("DISABILITY") ||
-                                               discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" ||
-                                               mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED";
-
-                            if (isVatExempt)
-                            {
-                                if (discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED")
-                                {
-                                    DLY_NON_TAXSLS = DLY_NON_TAXSLS + dr["Total"].ToSafeDecimal();
-                                }
-                                else
-                                {
-                                    DLY_NON_TAXSLS = DLY_NON_TAXSLS + discAmt;
-                                }
-                            }
+                            DLY_TOT_SCDISC = DLY_TOT_SCDISC + discAmt;
+                        }
+                        else
+                        {
+                            DLY_TOT_OTHDISC = DLY_TOT_OTHDISC + discAmt;
                         }
 
-                        string getVoided = $"SELECT * FROM voiddata WHERE OrderID = '{dr["OrderNo"]}'";
-                        DataTable dtVoid = _dbsqlite.GetDataTable(getVoided);
-                        foreach (DataRow dvr in dtVoid.Rows)
+                        // Non-taxable (VAT Exempt) check for #07:
+                        // Senior and PWD are VAT-exempt. Diplomat and Zero Rated are also VAT-exempt (No VAT).
+                        // NAAC, Solo Parent, and Medal of Valor are WITH VAT, so they do NOT add to Non-Taxable Sales.
+                        bool isVatExempt = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
+                                           discType == "PWD" || discType.Contains("DISABILITY") ||
+                                           discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" ||
+                                           mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED";
+
+                        if (isVatExempt)
                         {
-                            DLY_TOT_VOIDAMT = DLY_TOT_VOIDAMT + dr["Total"].ToSafeDecimal();
+                            orderIsVatExempt = true;
+                            orderVatExemptDiscounts += discAmt;
                         }
+                    }
+
+                    if (orderIsVatExempt)
+                    {
+                        // VAT-exempt sales base for this order
+                        DLY_NON_TAXSLS += (dr["Total"].ToSafeDecimal() + orderVatExemptDiscounts);
+                    }
 
                         DLY_TOT_TAXAMT = DLY_TOT_TAXAMT + dr["TaxTotal"].ToSafeDecimal();
                         DLY_TOT_SRVC_CHRGE = DLY_TOT_SRVC_CHRGE + dr["ServiceCharge"].ToSafeDecimal();
@@ -756,29 +867,11 @@ namespace Mega_World_Mall_Linking.Views
                 }
                 DLY_TOT_NETSLS = DLY_TOT_CASHSLS + DLY_TOT_CHRGESLS + DLY_TOT_OTHSLS;
                 DLY_TOT_GROSS = DLY_TOT_NETSLS + DLY_TOT_SCDISC + DLY_TOT_OTHDISC;
-                string GetGT = $"SELECT * FROM dailysls WHERE BUS_DATE = '{dateNow.AddDays(-1):yyyy-MM-dd}'";
-                DataTable dtGT = dailyDataStorage.GetDataTable(GetGT);
-                if(dtGT.Rows.Count > 0)
-                {
-                    foreach(DataRow GT in dtGT.Rows)
-                    {
-                        DLY_OLD_GRANTOT = GT["NEW_GRNTOT"].ToSafeDecimal();
-                    }
-                }
-                else
-                {
-                    DLY_OLD_GRANTOT = 0.00M;
-                }
+                DLY_OLD_GRANTOT = dailyDataStorage.GetPreviousGrandTotal(TER_NO, dateNow);
                 DLY_NEW_GRANTOT = DLY_TOT_NETSLS + DLY_OLD_GRANTOT;
 
-                int currentEodCount = 0;
-                DataTable dtPrevEOD = dailyDataStorage.GetLastEOD(TER_NO);
-                if (dtPrevEOD != null && dtPrevEOD.Rows.Count > 0)
-                {
-                    currentEodCount = dtPrevEOD.Rows[0]["EOD_CNT"].ToSafeInteger();
-                }
-                int newEodCount = currentEodCount + 1;
-                DLY_EODCNT = newEodCount;
+                int batchNumber = dailyDataStorage.GetDailyBatchNumber(TER_NO, dateNow);
+                DLY_EODCNT = batchNumber;
 
                 var header = new DailyDataHeader
                 {
@@ -828,10 +921,10 @@ namespace Mega_World_Mall_Linking.Views
                     CUS_CNT = DLY_TOT_CUSCNT,
                     CTL_NO = DLY_CTRLNO,
                     TRN_CNT = DLY_TOT_SLSTRAN,
-                    EOD_CNT = newEodCount
+                    EOD_CNT = batchNumber
                 };
                 dailyDataStorage.Add(dly_sls, false);
-                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC, newEodCount);
+                DailySalesGenerator.Generate(header, salesTypeList, SLS_LOC, batchNumber);
             }
         }
         private string GetSalesDiscount(string OrderNumber, DataTable dtDiscount)

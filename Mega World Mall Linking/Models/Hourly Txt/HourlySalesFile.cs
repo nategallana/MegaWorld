@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +18,8 @@ namespace Mega_World_Mall_Linking.Models
         public string BusinessDate { get; set; }
 
         public DateTime DateNoFormat { get; set; }
+
+        public int BatchNumber { get; set; } = 1;
 
         // Fields 04–07 (repeating) - Hourly Sales Entries
         public List<HourlySalesEntry> HourlyEntries { get; set; } = new List<HourlySalesEntry>();

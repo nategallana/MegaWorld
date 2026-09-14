@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -91,6 +91,23 @@ namespace Mega_World_Mall_Linking.Models
         {
             get { return tempdatabaseName; }
             set { tempdatabaseName = value; }
+        }
+
+        private bool autoEodEnabled = true;
+        private string autoEodTime = "23:30";
+
+        [DisplayName("Auto EOD Enabled")]
+        public bool AutoEodEnabled
+        {
+            get { return autoEodEnabled; }
+            set { autoEodEnabled = value; }
+        }
+
+        [DisplayName("Auto EOD Time")]
+        public string AutoEodTime
+        {
+            get { return string.IsNullOrWhiteSpace(autoEodTime) ? "23:30" : autoEodTime; }
+            set { autoEodTime = value; }
         }
     }
     public class ConfigurationModelConfig

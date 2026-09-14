@@ -1,0 +1,3 @@
+[2026-09-14 11:46:36] [INFO] Option C verification: Logger initialized successfully.
+[2026-09-14 11:46:36] [WARN] Option C verification: Warning test.
+[2026-09-14 11:57:34] [INFO] Daily Sales file generated: S0001011.914 in c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\bin\Debug\TestAutoCreateDir\SubDir (Batch: 1, Net Sales: 500.00, Transactions: 5)

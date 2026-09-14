@@ -47,5 +47,44 @@ namespace Mega_World_Mall_Linking.LocalStorage
             return GetDataTable(query);
         }
 
+        public decimal GetPreviousGrandTotal(string terminal, DateTime businessDate)
+        {
+            string busDateStr = businessDate.ToString("yyyy-MM-dd");
+            string where = string.IsNullOrEmpty(terminal)
+                ? $"BUS_DATE < '{busDateStr}'"
+                : $"BUS_DATE < '{busDateStr}' AND TER_NO = '{terminal}'";
+            string query = $"SELECT NEW_GRNTOT FROM {_tableName} WHERE {where} ORDER BY BUS_DATE DESC, ID DESC LIMIT 1";
+            try
+            {
+                DataTable dt = GetDataTable(query);
+                if (dt != null && dt.Rows.Count > 0 && dt.Rows[0]["NEW_GRNTOT"] != DBNull.Value)
+                {
+                    return dt.Rows[0]["NEW_GRNTOT"].ToSafeDecimal();
+                }
+            }
+            catch { }
+            return 0.00M;
+        }
+
+        public int GetDailyBatchNumber(string terminal, DateTime businessDate)
+        {
+            string busDateStr = businessDate.ToString("yyyy-MM-dd");
+            string where = string.IsNullOrEmpty(terminal)
+                ? $"BUS_DATE = '{busDateStr}'"
+                : $"BUS_DATE = '{busDateStr}' AND TER_NO = '{terminal}'";
+            string query = $"SELECT MAX(EOD_CNT) FROM {_tableName} WHERE {where}";
+            try
+            {
+                DataTable dt = GetDataTable(query);
+                if (dt != null && dt.Rows.Count > 0 && dt.Rows[0][0] != DBNull.Value)
+                {
+                    int currentBatch = dt.Rows[0][0].ToSafeInteger();
+                    return Math.Min(9, Math.Max(1, currentBatch + 1));
+                }
+            }
+            catch { }
+            return 1;
+        }
+
     }
 }

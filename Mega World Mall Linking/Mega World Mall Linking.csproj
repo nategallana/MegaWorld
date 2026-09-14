@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\EntityFramework.6.4.4\build\EntityFramework.props" Condition="Exists('..\packages\EntityFramework.6.4.4\build\EntityFramework.props')" />
   <Import Project="..\packages\SQLite.3.13.0\build\net45\SQLite.props" Condition="Exists('..\packages\SQLite.3.13.0\build\net45\SQLite.props')" />
@@ -195,6 +195,7 @@
     <Compile Include="Helpers\DbSqlLite.cs" />
     <Compile Include="Helpers\EntityConversion.cs" />
     <Compile Include="Helpers\HourCodeHelper.cs" />
+    <Compile Include="Helpers\Logger.cs" />
     <Compile Include="Helpers\ModelDataValidation.cs" />
     <Compile Include="Helpers\SettingWriter.cs" />
     <Compile Include="LocalStorage\Attributes\DBColumnAttribute.cs" />

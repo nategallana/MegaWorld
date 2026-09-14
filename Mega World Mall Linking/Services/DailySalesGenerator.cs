@@ -1,3 +1,4 @@
+using Mega_World_Mall_Linking.Helpers;
 using Mega_World_Mall_Linking.Models;
 using System;
 using System.Collections.Generic;
@@ -56,12 +57,17 @@ namespace Mega_World_Mall_Linking.Services
             }
 
             // 3. Generate file name
-            int safeBatch = batchNumber <= 0 ? 1 : batchNumber;
+            int safeBatch = Math.Min(9, Math.Max(1, batchNumber));
             string fileName = GenerateFileName(tenantCode, terminalNumber, safeBatch, businessDate);
             string fullPath = Path.Combine(outputDirectory, fileName);
 
+            if (!Directory.Exists(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
             File.WriteAllLines(fullPath, lines);
-            
+            Logger.LogInfo($"Daily Sales file generated: {fileName} in {outputDirectory} (Batch: {safeBatch}, Net Sales: {salesReport.TotalNetSalesAmount:N2}, Transactions: {salesReport.TotalNumberOfTransactions})");
         }
 
         private static string FormatAmount(object value)
@@ -79,7 +85,7 @@ namespace Mega_World_Mall_Linking.Services
         {
             string tenantCode = (tenantID ?? "").PadRight(4, '0').Substring(0, 4).ToUpper();
             string terminal = terminalNo.ToString("D2");
-            int safeBatch = batchNo <= 0 ? 1 : batchNo;
+            int safeBatch = Math.Min(9, Math.Max(1, batchNo));
             string batch = safeBatch.ToString();
 
             string month = date.Month <= 9
