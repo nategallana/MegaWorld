@@ -5,6 +5,7 @@ using System.Data.SQLite;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Mega_World_Mall_Linking.Helpers;
 
 public class DbSQLite
 {
@@ -17,17 +18,35 @@ public class DbSQLite
         {
             throw new ArgumentNullException(nameof(databasePath), "Database path is empty");
         }
-        if (string.IsNullOrEmpty(databaseName))
+
+        // Check if databasePath is already a direct file path ending in .db
+        if (databasePath.EndsWith(".db", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentNullException(nameof(databaseName), "Database name is empty");
+            DatabasePath = Path.GetFullPath(databasePath);
+            DatabaseName = Path.GetFileName(DatabasePath);
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(databaseName))
+            {
+                throw new ArgumentNullException(nameof(databaseName), "Database name is empty");
+            }
+
+            DatabaseName = Path.GetFileName(databaseName);
+            DatabasePath = Path.GetFullPath(Path.Combine(databasePath, databaseName));
         }
 
-        DatabaseName = databaseName;
-        DatabasePath = Path.Combine(databasePath, databaseName);
-
-        if (!string.IsNullOrEmpty(databasePath) && !Directory.Exists(databasePath))
+        string targetDir = Path.GetDirectoryName(DatabasePath);
+        if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
         {
-            Directory.CreateDirectory(databasePath);
+            try
+            {
+                Directory.CreateDirectory(targetDir);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError($"DbSQLite: Failed to create directory '{targetDir}'", ex);
+            }
         }
 
         if (!File.Exists(DatabasePath))

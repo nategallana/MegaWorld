@@ -173,8 +173,26 @@ namespace Mega_World_Mall_Linking.Views
                 }
                 if (!string.IsNullOrEmpty(PRDX_DBLOC))
                 {
-                    _dbParadox = new DbParadox(PRDX_DBLOC, PRDX_DBPASS);
-                    _dbsqlite = new DbSQLite(TEMP_DBLOC, TEMP_DBNAME);
+                    try
+                    {
+                        _dbParadox = new DbParadox(PRDX_DBLOC, PRDX_DBPASS);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"DateRange: Failed to initialize Paradox database at '{PRDX_DBLOC}'", ex);
+                        MessageBox.Show($"Unable to connect to Paradox database: {ex.Message}\n\nPlease check database configuration in Settings.", "Database Connection Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
+                    try
+                    {
+                        _dbsqlite = new DbSQLite(TEMP_DBLOC, TEMP_DBNAME);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError($"DateRange: Failed to initialize SQLite database at '{TEMP_DBLOC}' ({TEMP_DBNAME})", ex);
+                        MessageBox.Show($"Unable to connect to SQLite database: {ex.Message}\n\nPlease verify Temp DB path in Settings.", "Database Connection Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
                     _discountConfig = _settings.Read<DiscountModelConfig>("DiscountConfig");
                     _paymentConfig = _settings.Read<PaymentModelConfig>("PaymentConfig");
                     _disc = _discountConfig?.discountModels ?? new List<DiscountModel>();
@@ -184,7 +202,8 @@ namespace Mega_World_Mall_Linking.Views
             }
             catch (Exception ex)
             {
-                MessageBox.Show(String.Format("{0}/{1}", ex.Message, ex.StackTrace), "System Initialization", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
+                Logger.LogError("DateRange: System Initialization encountered an error", ex);
+                MessageBox.Show(String.Format("{0}\n\n{1}", ex.Message, ex.StackTrace), "System Initialization", MessageBoxButtons.OK, MessageBoxIcon.Error, MessageBoxDefaultButton.Button1);
             }
         }
         private bool InitializeConfiguration()

@@ -89,7 +89,7 @@ namespace Mega_World_Mall_Linking.Views
         {
             using (FolderBrowserDialog fbd = new FolderBrowserDialog())
             {
-                fbd.Description = "Browse destination folder for CSV sales files";
+                fbd.Description = "Browse folder for WBOX Paradox database";
                 if (fbd.ShowDialog().Equals(DialogResult.OK))
                 {
                     txt_DBPath.Text = fbd.SelectedPath;
@@ -339,12 +339,18 @@ namespace Mega_World_Mall_Linking.Views
 
         private void bunifuButton1_Click(object sender, EventArgs e)
         {
-            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+            using (OpenFileDialog ofd = new OpenFileDialog())
             {
-                fbd.Description = "Browse destination folder for Temp DB location";
-                if (fbd.ShowDialog().Equals(DialogResult.OK))
+                ofd.Title = "Select API SQLite Database (API_DB.db)";
+                ofd.Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*";
+                if (!string.IsNullOrEmpty(txt_TempLoc.Text) && Directory.Exists(txt_TempLoc.Text))
                 {
-                    txt_TempLoc.Text = fbd.SelectedPath;
+                    ofd.InitialDirectory = txt_TempLoc.Text;
+                }
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    txt_TempLoc.Text = Path.GetDirectoryName(ofd.FileName);
+                    txt_tempDB.Text = Path.GetFileName(ofd.FileName);
                 }
             }
         }
