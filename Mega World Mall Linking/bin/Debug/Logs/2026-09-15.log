@@ -1,0 +1,7 @@
+[2026-09-15 13:18:52] [INFO] Discount Detail file generated: DV2CT018.324 in C:\Users\MIS-01\.gemini\antigravity\brain\16d0df47-44cb-4bd7-ae11-52b7e54b4eab\scratch\test_out (Batch: 8, Entries: 2)
+[2026-09-15 14:30:31] [ERROR] System Initialization encountered an error | Exception: Access to the path 'C:\Windows\System32\WindowsPowerShell\v1.0\Settings' is denied. | StackTrace:    at System.IO.__Error.WinIOError(Int32 errorCode, String maybeFullPath)
+   at System.IO.Directory.InternalCreateDirectory(String fullPath, String path, Object dirSecurityObj, Boolean checkHost)
+   at System.IO.Directory.InternalCreateDirectoryHelper(String path, Boolean checkHost)
+   at Mega_World_Mall_Linking.Helpers.SettingWriter..ctor(String directory, Boolean secure) in c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\Helpers\SettingWriter.cs:line 24
+   at Mega_World_Mall_Linking.Views.frmMain.InitializeConfiguration() in c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\Views\frmMain.cs:line 220
+   at Mega_World_Mall_Linking.Views.frmMain.InitializeSystem() in c:\Users\MIS-01\Documents\GitHub\MegaWorld\Mega World Mall Linking\Views\frmMain.cs:line 176

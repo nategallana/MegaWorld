@@ -24,9 +24,18 @@ namespace Mega_World_Mall_Linking.Services
                 string discDesc = (entry.DiscountDescription ?? string.Empty).Trim();
                 if (discDesc.Length > 25)
                     discDesc = discDesc.Substring(0, 25);
+
                 string discAmt = entry.DiscountAmount.ToString("0.00");
 
-                string line = $"{discCode}, {discDesc}, {discAmt}";
+                string line;
+                if (string.IsNullOrWhiteSpace(discDesc))
+                {
+                    line = $"{discCode},  , {discAmt}";
+                }
+                else
+                {
+                    line = $"{discCode}, {discDesc}, {discAmt}";
+                }
                 lines.Add(line);
             }
 

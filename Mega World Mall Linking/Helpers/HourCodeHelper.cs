@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,6 +10,11 @@ namespace Mega_World_Mall_Linking.Helpers
     {
         public static string GetHourCode(DateTime time)
         {
+            if (time.Minute == 0 && time.Second == 0)
+            {
+                return time.Hour == 0 ? "24" : time.Hour.ToString();
+            }
+
             int hour = time.Hour;
             int minute = time.Minute;
 
@@ -25,7 +30,7 @@ namespace Mega_World_Mall_Linking.Helpers
             else if (hourCode > 24)
                 hourCode = 1;
 
-            return hourCode.ToString("D2");
+            return hourCode.ToString();
         }
     }
 }

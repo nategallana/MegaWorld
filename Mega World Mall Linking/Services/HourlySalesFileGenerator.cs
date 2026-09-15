@@ -16,8 +16,8 @@ namespace Mega_World_Mall_Linking.Services
             var lines = new List<string>();
 
             // Fields 01–03
-            lines.Add("01" + data.TenantCode.PadRight(8, ' '));
-            lines.Add("02" + data.POSTerminalNumber.ToString());
+            lines.Add("01" + (data.TenantCode ?? string.Empty).Trim());
+            lines.Add("02" + data.POSTerminalNumber.ToString("D2"));
             lines.Add("03" + data.BusinessDate);
 
             // Fields 04–07: Hourly Sales (auto-detect hour code)
@@ -27,7 +27,7 @@ namespace Mega_World_Mall_Linking.Services
                 lines.Add("04" + hourCode);
 
                 long cents = (long)Math.Round(entry.NetSalesAmount * 100, MidpointRounding.AwayFromZero);
-                lines.Add("05" + cents.ToString());
+                lines.Add("05" + (cents == 0 ? "000" : cents.ToString()));
                 lines.Add("06" + entry.TransactionCount.ToString());
                 lines.Add("07" + entry.CustomerCount.ToString());
             }

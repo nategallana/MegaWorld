@@ -388,7 +388,11 @@ namespace Mega_World_Mall_Linking.Views
                 if (sHR != null && sHR.Rows.Count > 0)
                 {
                     #region hourly Details
-                    for (int hr = s; hr <= e; hr++)
+                    // Full 24-hour cycle matching mall spec:
+                    // Hour 0 (12:00 AM - 1:00 AM) maps to Hour Code 24, followed by 1 to 23
+                    int[] hourOrder = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 };
+
+                    foreach (int hr in hourOrder)
                     {
                         int hrTrnCnt = 0;
                         int hrCusCnt = 0;
@@ -396,6 +400,7 @@ namespace Mega_World_Mall_Linking.Views
                         decimal hrNetSales = 0.00M;
                         string str_HR = string.Format("{0:D2}:00:00", hr);
                         string end_HR = string.Format("{0:D2}:59:59", hr);
+                        string firstOrderNo = string.Empty;
 
                         string gethourlydetail = $"SELECT * FROM {SqlLiteTable.ORDERDATA} WHERE AccDate = '{dateNow:yyyyMMdd}' AND (CASE WHEN Time IS NOT NULL AND Time != '' THEN Time ELSE Time_Now END) BETWEEN '{str_HR}' AND '{end_HR}'";
                         DataTable dtHourlyDetails = _dbsqlite.GetDataTable(gethourlydetail);
@@ -411,37 +416,42 @@ namespace Mega_World_Mall_Linking.Views
                                 if (dtVoid != null && dtVoid.Rows.Count > 0) isVoided = true;
                                 if (isVoided) continue;
 
+                                if (string.IsNullOrEmpty(firstOrderNo))
+                                {
+                                    firstOrderNo = Hdr["OrderNo"]?.ToString() ?? string.Empty;
+                                }
+
                                 hrTrnCnt++;
                                 hrCusCnt++;
                                 hrNetSales += Hdr["Total"].ToSafeDecimal();
                                 srvcCharge += Hdr["ServiceCharge"].ToSafeDecimal();
                             }
+                        }
 
-                            if (hrTrnCnt > 0)
+                        DateTime hour = dateNow.Date.AddHours(hr);
+                        HR_TOT_SLSCNT += hrTrnCnt;
+                        HR_TOT_CUSCNT += hrCusCnt;
+                        HR_TOT_NETSLS += hrNetSales;
+
+                        hourlySalesEntries.Add(new HourlySalesEntry
+                        {
+                            Timestamp = hour,
+                            NetSalesAmount = hrNetSales,
+                            TransactionCount = hrTrnCnt,
+                            CustomerCount = hrCusCnt
+                        });
+
+                        if (hrTrnCnt > 0)
+                        {
+                            var HourlySalesDetails = new HourlyDataDetails
                             {
-                                DateTime hour = dateNow.Date.AddHours(hr);
-                                HR_TOT_SLSCNT += hrTrnCnt;
-                                HR_TOT_CUSCNT += hrCusCnt;
-                                HR_TOT_NETSLS += hrNetSales;
-
-                                hourlySalesEntries.Add(new HourlySalesEntry
-                                {
-                                    Timestamp = hour,
-                                    NetSalesAmount = hrNetSales,
-                                    TransactionCount = hrTrnCnt,
-                                    CustomerCount = hrCusCnt
-                                });
-
-                                var HourlySalesDetails = new HourlyDataDetails
-                                {
-                                    TRAN_ID = dtHourlyDetails.Rows[0]["OrderNo"].ToString(),
-                                    HOUR_CODE = hour.ToString(),
-                                    HNET_SLS = hrNetSales,
-                                    TRN_NO = hrTrnCnt,
-                                    CUS_NO = hrCusCnt
-                                };
-                                hourlyDataDetailsStorage.Add(HourlySalesDetails, false);
-                            }
+                                TRAN_ID = firstOrderNo,
+                                HOUR_CODE = hour.ToString(),
+                                HNET_SLS = hrNetSales,
+                                TRN_NO = hrTrnCnt,
+                                CUS_NO = hrCusCnt
+                            };
+                            hourlyDataDetailsStorage.Add(HourlySalesDetails, false);
                         }
                     }
                     #endregion
@@ -510,10 +520,20 @@ namespace Mega_World_Mall_Linking.Views
                     {
                         foreach (DataRow dsr in discount.Rows)
                         {
-                            decimal amount = dsr["Amount"].ToSafeDecimal();
-                            if (amount <= 0) continue;
-
                             string rawType = dsr["Type"]?.ToString()?.Trim() ?? string.Empty;
+                            if (string.IsNullOrEmpty(rawType)) continue;
+
+                            decimal amount = dsr["Amount"].ToSafeDecimal();
+                            if (amount <= 0)
+                            {
+                                string getItemDisc = $"SELECT COALESCE(SUM(PriceBefDisc - PriceAftDisc), 0) FROM itemdata WHERE OrderNo = '{orderNo}' AND (DiscName = '{rawType}' OR DiscAmount > 0)";
+                                DataTable dtItemDisc = _dbsqlite.GetDataTable(getItemDisc);
+                                if (dtItemDisc != null && dtItemDisc.Rows.Count > 0)
+                                {
+                                    amount = dtItemDisc.Rows[0][0].ToSafeDecimal();
+                                }
+                            }
+                            if (amount <= 0) continue;
                             if (string.IsNullOrEmpty(rawType)) continue;
 
                             DiscountModel disc = _disc?.Find(x =>
@@ -525,41 +545,12 @@ namespace Mega_World_Mall_Linking.Views
                             if (disc != null && !string.IsNullOrWhiteSpace(disc.MallDiscount))
                             {
                                 discCode = disc.MallDiscount.Trim();
-                                discDesc = !string.IsNullOrWhiteSpace(disc.WboxDiscount) ? disc.WboxDiscount.Trim() : rawType;
+                                discDesc = !string.IsNullOrWhiteSpace(disc.WboxDiscount) ? disc.WboxDiscount.Trim() : string.Empty;
                             }
                             else
                             {
-                                string upper = rawType.ToUpper();
-                                if (upper == "SENIOR" || upper == "SENIOR CITIZEN" || upper == "SC" || upper == "SCD")
-                                {
-                                    discCode = "SC";
-                                    discDesc = "SENIOR CITIZEN";
-                                }
-                                else if (upper == "PWD" || upper.Contains("DISABILITY"))
-                                {
-                                    discCode = "PWD";
-                                    discDesc = "PERSON WITH DISABILITY";
-                                }
-                                else if (upper == "NAAC" || upper.Contains("ATHLETE"))
-                                {
-                                    discCode = "NAAC";
-                                    discDesc = "NATL ATHLETES & COACHES";
-                                }
-                                else if (upper == "SOLO PARENT" || upper == "SOLOPARENT" || upper == "SP")
-                                {
-                                    discCode = "SP";
-                                    discDesc = "SOLO PARENT";
-                                }
-                                else if (upper == "MEDAL OF VALOR" || upper == "MOV")
-                                {
-                                    discCode = "MOV";
-                                    discDesc = "MEDAL OF VALOR";
-                                }
-                                else
-                                {
-                                    discCode = rawType.Length > 6 ? rawType.Substring(0, 6) : rawType;
-                                    discDesc = rawType;
-                                }
+                                discCode = rawType.Length > 6 ? rawType.Substring(0, 6) : rawType;
+                                discDesc = string.Empty;
                             }
 
                             if (!discountDataStorage.IsExistValue("ORDER_ID", orderNo))
@@ -642,8 +633,8 @@ namespace Mega_World_Mall_Linking.Views
                     tranCnt++;
                     CusCnt++;
 
-                    bool orderIsVatExempt = false;
-                    decimal orderVatExemptDiscounts = 0.00M;
+                    decimal orderGovDisc = 0.00M;
+                    bool orderHasVatExempt = false;
 
                     string getDisc = $"SELECT * FROM {SqlLiteTable.DISCDATA} WHERE OrderNo = '{dr["OrderNo"]}'";
                     DataTable dtDisc = _dbsqlite.GetDataTable(getDisc);
@@ -654,6 +645,15 @@ namespace Mega_World_Mall_Linking.Views
                             string rawType = drDisc["Type"]?.ToString()?.Trim() ?? "";
                             string discType = rawType.ToUpper();
                             decimal discAmt = drDisc["Amount"].ToSafeDecimal();
+                            if (discAmt <= 0)
+                            {
+                                string getItemDisc = $"SELECT COALESCE(SUM(PriceBefDisc - PriceAftDisc), 0) FROM itemdata WHERE OrderNo = '{dr["OrderNo"]}' AND (DiscName = '{rawType}' OR DiscAmount > 0)";
+                                DataTable dtItemDisc = _dbsqlite.GetDataTable(getItemDisc);
+                                if (dtItemDisc != null && dtItemDisc.Rows.Count > 0)
+                                {
+                                    discAmt = dtItemDisc.Rows[0][0].ToSafeDecimal();
+                                }
+                            }
 
                             DiscountModel disc = _disc?.Find(x =>
                                 (!string.IsNullOrEmpty(x.WboxDiscount) && x.WboxDiscount.Trim().Equals(rawType, StringComparison.OrdinalIgnoreCase)) ||
@@ -671,32 +671,23 @@ namespace Mega_World_Mall_Linking.Views
                             if (isGovMandated)
                             {
                                 DLY_TOT_SCDISC += discAmt;
+                                orderGovDisc += discAmt;
+                                orderHasVatExempt = true;
                             }
                             else
                             {
                                 DLY_TOT_OTHDISC += discAmt;
                             }
-
-                            // Non-taxable (VAT Exempt) check for #07:
-                            // Senior and PWD are VAT-exempt. Diplomat and Zero Rated are also VAT-exempt (No VAT).
-                            // NAAC, Solo Parent, and Medal of Valor are WITH VAT, so they do NOT add to Non-Taxable Sales.
-                            bool isVatExempt = discType == "SC" || discType == "SCD" || discType == "SENIOR CITIZEN" || discType == "SENIOR" ||
-                                               discType == "PWD" || discType.Contains("DISABILITY") ||
-                                               discType == "DIPLOMAT" || discType == "ZERO RATED" || discType == "ZERORATED" ||
-                                               mappedCode == "SC" || mappedCode == "PWD" || mappedCode == "DIPLOMAT" || mappedCode == "ZERORATED";
-
-                            if (isVatExempt)
-                            {
-                                orderIsVatExempt = true;
-                                orderVatExemptDiscounts += discAmt;
-                            }
                         }
                     }
 
-                    if (orderIsVatExempt)
+                    if (orderHasVatExempt)
                     {
-                        // VAT-exempt sales base for this order
-                        DLY_NON_TAXSLS += (dr["Total"].ToSafeDecimal() + orderVatExemptDiscounts);
+                        decimal oTot = dr["Total"].ToSafeDecimal();
+                        decimal oTax = dr["TaxTotal"].ToSafeDecimal();
+                        decimal vatableGross = oTax > 0 ? Math.Round(oTax / 0.12M * 1.12M, 2) : 0.00M;
+                        decimal vatExemptBase = Math.Max(0.00M, (oTot + orderGovDisc) - vatableGross);
+                        DLY_NON_TAXSLS += vatExemptBase;
                     }
 
                     DLY_TOT_TAXAMT += dr["TaxTotal"].ToSafeDecimal();
@@ -790,7 +781,7 @@ namespace Mega_World_Mall_Linking.Views
                 }
 
                 DLY_TOT_NETSLS = DLY_TOT_CASHSLS + DLY_TOT_CHRGESLS + DLY_TOT_OTHSLS;
-                DLY_TOT_GROSS = DLY_TOT_NETSLS + DLY_TOT_SCDISC + DLY_TOT_OTHDISC;
+                DLY_TOT_GROSS = DLY_TOT_NETSLS + DLY_TOT_SCDISC + DLY_TOT_OTHDISC + DLY_TOT_VOIDAMT;
 
                 DLY_OLD_GRANTOT = dailyDataStorage.GetPreviousGrandTotal(TER_NO, dateNow);
                 DLY_NEW_GRANTOT = DLY_TOT_NETSLS + DLY_OLD_GRANTOT;

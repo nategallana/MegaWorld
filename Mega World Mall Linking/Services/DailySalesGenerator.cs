@@ -25,8 +25,8 @@ namespace Mega_World_Mall_Linking.Services
             DateTime businessDate = salesReport.Date;
 
             // 1. Header lines
-            lines.Add("01" + tenantCode);
-            lines.Add("02" + terminalNumber.ToString());
+            lines.Add("01" + (tenantCode ?? string.Empty).Trim());
+            lines.Add("02" + terminalNumber.ToString("D2"));
             lines.Add("03" + businessDate.ToString("MMddyyyy"));
             lines.Add("04" + FormatAmount(salesReport.OldAccumulatedTotal));
             lines.Add("05" + FormatAmount(salesReport.NewAccumulatedTotal));
